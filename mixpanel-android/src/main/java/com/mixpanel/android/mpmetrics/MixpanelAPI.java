@@ -320,10 +320,6 @@ public class MixpanelAPI {
             }
 
         }
-
-        if (!mConfig.getDisableExceptionHandler()) {
-            ExceptionHandler.init();
-        }
     }
 
     /**
