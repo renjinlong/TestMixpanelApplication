@@ -3,7 +3,6 @@ package com.mixpanel.android.mpmetrics;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
-import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,8 +13,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 
-import com.mixpanel.android.R;
-import com.mixpanel.android.util.ActivityImageUtils;
 import com.mixpanel.android.util.MPLog;
 
 import org.json.JSONArray;
@@ -26,20 +23,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -262,8 +253,6 @@ public class MixpanelAPI {
             optOutTracking();
         }
 
-        mUpdatesListener = constructUpdatesListener();
-        mDecideMessages = constructDecideUpdates(token, mUpdatesListener);
         mConnectIntegrations = new ConnectIntegrations(this, mContext);
 
         // TODO reading persistent identify immediately forces the lazy load of the preferences, and defeats the
@@ -272,7 +261,6 @@ public class MixpanelAPI {
         if (null == decideId) {
             decideId = mPersistentIdentity.getEventsDistinctId();
         }
-        mDecideMessages.setDistinctId(decideId);
 
         if (mPersistentIdentity.isFirstLaunch(MPDbAdapter.getInstance(mContext).getDatabaseFile().exists())) {
             track(AutomaticEvents.FIRST_OPEN, null, true);
@@ -490,11 +478,6 @@ public class MixpanelAPI {
             if (markAsUserId) {
                 mPersistentIdentity.markEventsUserIdPresent();
             }
-            String decideId = mPersistentIdentity.getPeopleDistinctId();
-            if (null == decideId) {
-                decideId = mPersistentIdentity.getEventsDistinctId();
-            }
-            mDecideMessages.setDistinctId(decideId);
         }
     }
 
@@ -1140,116 +1123,10 @@ public class MixpanelAPI {
         public String getDistinctId();
 
         /**
-         * Shows an in-app notification to the user if one is available. If the notification
-         * is a mini notification, this method will attach and remove a Fragment to parent.
-         * The lifecycle of the Fragment will be handled entirely by the Mixpanel library.
-         *
-         * <p>If the notification is a takeover notification, a TakeoverInAppActivity will be launched to
-         * display the Takeover notification.
-         *
-         * <p>It is safe to call this method any time you want to potentially display an in-app notification.
-         * This method will be a no-op if there is already an in-app notification being displayed.
-         *
-         * <p>This method is a no-op in environments with
-         * Android API before JellyBean/API level 16.
-         *
-         * @param parent the Activity that the mini notification will be displayed in, or the Activity
-         *               that will be used to launch TakeoverInAppActivity for the takeover notification.
-         */
-        public void showNotificationIfAvailable(Activity parent);
-
-        /**
-         * Shows the given in-app notification to the user. Display will occur just as if the
-         * notification was shown via showNotificationIfAvailable. In most cases, it is
-         * easier and more efficient to use showNotificationIfAvailable.
-         *
-         * @param notif  the {@link com.mixpanel.android.mpmetrics.InAppNotification} to show
-         * @param parent the Activity that the mini notification will be displayed in, or the Activity
-         *               that will be used to launch TakeoverInAppActivity for the takeover notification.
-         */
-        public void showGivenNotification(InAppNotification notif, Activity parent);
-
-        /**
-         * Sends an event to Mixpanel that includes the automatic properties associated
-         * with the given notification. In most cases this is not required, unless you're
-         * not showing notifications using the library-provided in views and activities.
-         *
-         * @param eventName  the name to use when the event is tracked.
-         * @param notif      the {@link com.mixpanel.android.mpmetrics.InAppNotification} associated with the event you'd like to track.
-         * @param properties additional properties to be tracked with the event.
-         */
-        public void trackNotification(String eventName, InAppNotification notif, JSONObject properties);
-
-        /**
-         * Returns an InAppNotification object if one is available and being held by the library, or null if
-         * no notification is currently available. Callers who want to display in-app notifications should call this
-         * method periodically. A given InAppNotification will be returned only once from this method, so callers
-         * should be ready to consume any non-null return value.
-         *
-         * <p>This function will return quickly, and will not cause any communication with
-         * Mixpanel's servers, so it is safe to call this from the UI thread.
-         * <p>
-         * Note: you must call call {@link People#trackNotificationSeen(InAppNotification)} or you will
-         * receive the same {@link com.mixpanel.android.mpmetrics.InAppNotification} again the
-         * next time notifications are refreshed from Mixpanel's servers (on identify, or when
-         * your app is destroyed and re-created)
-         *
-         * @return an InAppNotification object if one is available, null otherwise.
-         */
-        public InAppNotification getNotificationIfAvailable();
-
-        /**
-         * Tells MixPanel that you have handled an {@link com.mixpanel.android.mpmetrics.InAppNotification}
-         * in the case where you are manually dealing with your notifications ({@link People#getNotificationIfAvailable()}).
-         * <p>
-         * Note: if you do not acknowledge the notification you will receive it again each time
-         * you call {@link People#identify(String)} and then call {@link People#getNotificationIfAvailable()}
-         *
-         * @param notif the notification to track (no-op on null)
-         */
-        void trackNotificationSeen(InAppNotification notif);
-
-        /**
-         * Shows an in-app notification identified by id. The behavior of this is otherwise identical to
-         * {@link People#showNotificationIfAvailable(Activity)}.
-         *
-         * @param id     the id of the InAppNotification you wish to show.
-         * @param parent the Activity that the mini notification will be displayed in, or the Activity
-         *               that will be used to launch TakeoverInAppActivity for the takeover notification.
-         */
-        public void showNotificationById(int id, final Activity parent);
-
-        /**
          * Return an instance of Mixpanel people with a temporary distinct id.
          * Instances returned by withIdentity will not check decide with the given distinctId.
          */
         public People withIdentity(String distinctId);
-
-        /**
-         * Adds a new listener that will receive a callback when new updates from Mixpanel
-         * (like in-app notifications or A/B test experiments) are discovered. Most users of the library
-         * will not need this method since in-app notifications and experiments are
-         * applied automatically to your application by default.
-         *
-         * <p>The given listener will be called when a new batch of updates is detected. Handlers
-         * should be prepared to handle the callback on an arbitrary thread.
-         *
-         * <p>The listener will be called when new in-app notifications or experiments
-         * are detected as available. That means you wait to call
-         * to show content and updates that have been delivered to your app. (You can also call these
-         * functions whenever else you would like, they're inexpensive and will do nothing if no
-         * content is available.)
-         *
-         * @param listener the listener to add
-         */
-        public void addOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener);
-
-        /**
-         * Removes a listener previously registered with addOnMixpanelUpdatesReceivedListener.
-         *
-         * @param listener the listener to add
-         */
-        public void removeOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener);
 
     }
 
@@ -1282,7 +1159,6 @@ public class MixpanelAPI {
      * when any Activity is opened.
      * <p>
      * This is only available if the android version is >= 16. You can disable livecycle callbacks by setting
-     * com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates to false in your AndroidManifest.xml
      * <p>
      * This function is automatically called when the library is initialized unless you explicitly
      * set com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates to false in your AndroidManifest.xml
@@ -1376,19 +1252,6 @@ public class MixpanelAPI {
         return new PersistentIdentity(referrerPreferences, storedPreferences, timeEventsPrefs, mixpanelPrefs);
     }
 
-    /* package */ DecideMessages constructDecideUpdates(final String token, final DecideMessages.OnNewResultsListener listener) {
-        return new DecideMessages(mContext, token, listener, mPersistentIdentity.getSeenCampaignIds());
-    }
-
-    /* package */ UpdatesListener constructUpdatesListener() {
-        if (Build.VERSION.SDK_INT < MPConfig.UI_FEATURES_MIN_API) {
-            MPLog.i(LOGTAG, "Notifications are not supported on this Android OS Version");
-            return new UnsupportedUpdatesListener();
-        } else {
-            return new SupportedUpdatesListener();
-        }
-    }
-
     /* package */ boolean sendAppOpen() {
         return !mConfig.getDisableAppOpenEvent();
     }
@@ -1401,7 +1264,6 @@ public class MixpanelAPI {
             if (hasOptedOutTracking()) return;
             synchronized (mPersistentIdentity) {
                 mPersistentIdentity.setPeopleDistinctId(distinctId);
-                mDecideMessages.setDistinctId(distinctId);
             }
             pushWaitingPeopleRecord();
         }
@@ -1570,74 +1432,6 @@ public class MixpanelAPI {
         }
 
         @Override
-        public InAppNotification getNotificationIfAvailable() {
-            return mDecideMessages.getNotification(mConfig.getTestMode());
-        }
-
-        @Override
-        public void trackNotificationSeen(InAppNotification notif) {
-            if (notif == null) return;
-            mPersistentIdentity.saveCampaignAsSeen(notif.getId());
-            if (hasOptedOutTracking()) return;
-
-            trackNotification("$campaign_delivery", notif, null);
-            final MixpanelAPI.People people = getPeople().withIdentity(getDistinctId());
-            if (people != null) {
-                final DateFormat dateFormat = new SimpleDateFormat(ENGAGE_DATE_FORMAT_STRING, Locale.US);
-                final JSONObject notifProperties = notif.getCampaignProperties();
-                try {
-                    notifProperties.put("$time", dateFormat.format(new Date()));
-                } catch (final JSONException e) {
-                    MPLog.e(LOGTAG, "Exception trying to track an in-app notification seen", e);
-                }
-                people.append("$campaigns", notif.getId());
-                people.append("$notifications", notifProperties);
-            } else {
-                MPLog.e(LOGTAG, "No identity found. Make sure to call getPeople().identify() before showing in-app notifications.");
-            }
-        }
-
-        @Override
-        public void showNotificationIfAvailable(final Activity parent) {
-            if (Build.VERSION.SDK_INT < MPConfig.UI_FEATURES_MIN_API) {
-                return;
-            }
-
-            showGivenOrAvailableNotification(null, parent);
-        }
-
-        @Override
-        public void showNotificationById(int id, final Activity parent) {
-            final InAppNotification notif = mDecideMessages.getNotification(id, mConfig.getTestMode());
-            showGivenNotification(notif, parent);
-        }
-
-        @Override
-        public void showGivenNotification(final InAppNotification notif, final Activity parent) {
-            if (notif != null) {
-                showGivenOrAvailableNotification(notif, parent);
-            }
-        }
-
-        @Override
-        public void trackNotification(final String eventName, final InAppNotification notif, final JSONObject properties) {
-            if (hasOptedOutTracking()) return;
-            JSONObject notificationProperties = notif.getCampaignProperties();
-            if (properties != null) {
-                try {
-                    Iterator<String> keyIterator = properties.keys();
-                    while (keyIterator.hasNext()) {
-                        String key = keyIterator.next();
-                        notificationProperties.put(key, properties.get(key));
-                    }
-                } catch (final JSONException e) {
-                    MPLog.e(LOGTAG, "Exception merging provided properties with notification properties", e);
-                }
-            }
-            track(eventName, notificationProperties);
-        }
-
-        @Override
         public void trackCharge(double amount, JSONObject properties) {
             if (hasOptedOutTracking()) return;
             final Date now = new Date();
@@ -1703,16 +1497,6 @@ public class MixpanelAPI {
             };
         }
 
-        @Override
-        public void addOnMixpanelUpdatesReceivedListener(final OnMixpanelUpdatesReceivedListener listener) {
-            mUpdatesListener.addOnMixpanelUpdatesReceivedListener(listener);
-        }
-
-        @Override
-        public void removeOnMixpanelUpdatesReceivedListener(final OnMixpanelUpdatesReceivedListener listener) {
-            mUpdatesListener.removeOnMixpanelUpdatesReceivedListener(listener);
-        }
-
         private JSONObject stdPeopleMessage(String actionType, Object properties)
                 throws JSONException {
             final JSONObject dataObj = new JSONObject();
@@ -1734,154 +1518,12 @@ public class MixpanelAPI {
             return dataObj;
         }
 
-        private void showGivenOrAvailableNotification(final InAppNotification notifOrNull, final Activity parent) {
-            if (Build.VERSION.SDK_INT < MPConfig.UI_FEATURES_MIN_API) {
-                MPLog.v(LOGTAG, "Will not show notifications, os version is too low.");
-                return;
-            }
-
-            parent.runOnUiThread(new Runnable() {
-                @Override
-                @TargetApi(MPConfig.UI_FEATURES_MIN_API)
-                public void run() {
-                    final ReentrantLock lock = UpdateDisplayState.getLockObject();
-                    lock.lock();
-                    try {
-                        if (UpdateDisplayState.hasCurrentProposal()) {
-                            MPLog.v(LOGTAG, "DisplayState is locked, will not show notifications.");
-                            return; // Already being used.
-                        }
-
-                        InAppNotification toShow = notifOrNull;
-                        if (null == toShow) {
-                            toShow = getNotificationIfAvailable();
-                        }
-                        if (null == toShow) {
-                            MPLog.v(LOGTAG, "No notification available, will not show.");
-                            return; // Nothing to show
-                        }
-
-                        final InAppNotification.Type inAppType = toShow.getType();
-                        if (inAppType == InAppNotification.Type.TAKEOVER) {
-                            MPLog.v(LOGTAG, "Application is not configured to show takeover notifications, none will be shown.");
-                            return; // Can't show due to config.
-                        }
-
-                        final int highlightColor = ActivityImageUtils.getHighlightColorFromBackground(parent);
-                        final UpdateDisplayState.DisplayState.InAppNotificationState proposal =
-                                new UpdateDisplayState.DisplayState.InAppNotificationState(toShow, highlightColor);
-                        final int intentId = UpdateDisplayState.proposeDisplay(proposal, getDistinctId(), mToken);
-                        if (intentId <= 0) {
-                            MPLog.e(LOGTAG, "DisplayState Lock in inconsistent state! Please report this issue to Mixpanel");
-                            return;
-                        }
-
-                        switch (inAppType) {
-                            case MINI: {
-                                final UpdateDisplayState claimed = UpdateDisplayState.claimDisplayState(intentId);
-                                if (null == claimed) {
-                                    MPLog.v(LOGTAG, "Notification's display proposal was already consumed, no notification will be shown.");
-                                    return; // Can't claim the display state
-                                }
-                                final InAppFragment inapp = new InAppFragment();
-                                inapp.setDisplayState(
-                                        MixpanelAPI.this,
-                                        intentId,
-                                        (UpdateDisplayState.DisplayState.InAppNotificationState) claimed.getDisplayState()
-                                );
-                                inapp.setRetainInstance(true);
-
-                                MPLog.v(LOGTAG, "Attempting to show mini notification.");
-                                final FragmentTransaction transaction = parent.getFragmentManager().beginTransaction();
-                                transaction.setCustomAnimations(0, R.animator.com_mixpanel_android_slide_down);
-                                transaction.add(android.R.id.content, inapp);
-
-                                try {
-                                    transaction.commit();
-                                } catch (IllegalStateException e) {
-                                    // if the app is in the background or the current activity gets killed, rendering the
-                                    // notifiction will lead to a crash
-                                    MPLog.v(LOGTAG, "Unable to show notification.");
-                                    mDecideMessages.markNotificationAsUnseen(toShow);
-                                }
-                            }
-                            break;
-                            default:
-                                MPLog.e(LOGTAG, "Unrecognized notification type " + inAppType + " can't be shown");
-                        }
-                        if (!mConfig.getTestMode()) {
-                            trackNotificationSeen(toShow);
-                        }
-                    } finally {
-                        lock.unlock();
-                    }
-                } // run()
-
-            });
-        }
-
         @Override
         public boolean isIdentified() {
             return getDistinctId() != null;
         }
     }// PeopleImpl
 
-    private interface UpdatesListener extends DecideMessages.OnNewResultsListener {
-        public void addOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener);
-
-        public void removeOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener);
-    }
-
-    private class UnsupportedUpdatesListener implements UpdatesListener {
-        @Override
-        public void onNewResults() {
-            // Do nothing, these features aren't supported in older versions of the library
-        }
-
-        @Override
-        public void addOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener) {
-            // Do nothing, not supported
-        }
-
-        @Override
-        public void removeOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener) {
-            // Do nothing, not supported
-        }
-    }
-
-    private class SupportedUpdatesListener implements UpdatesListener, Runnable {
-        @Override
-        public void onNewResults() {
-            mExecutor.execute(this);
-        }
-
-        @Override
-        public void addOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener) {
-            mListeners.add(listener);
-
-            if (mDecideMessages.hasUpdatesAvailable()) {
-                onNewResults();
-            }
-        }
-
-        @Override
-        public void removeOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener) {
-            mListeners.remove(listener);
-        }
-
-        @Override
-        public void run() {
-            // It's possible that by the time this has run the updates we detected are no longer
-            // present, which is ok.
-            for (final OnMixpanelUpdatesReceivedListener listener : mListeners) {
-                listener.onMixpanelUpdatesReceived();
-            }
-            mConnectIntegrations.setupIntegrations(mDecideMessages.getIntegrations());
-        }
-
-        private final Set<OnMixpanelUpdatesReceivedListener> mListeners = Collections.newSetFromMap(new ConcurrentHashMap<OnMixpanelUpdatesReceivedListener, Boolean>());
-        private final Executor mExecutor = Executors.newSingleThreadExecutor();
-    }
 
     ////////////////////////////////////////////////////
     protected void flushNoDecideCheck() {
@@ -1890,7 +1532,7 @@ public class MixpanelAPI {
     }
 
     protected void track(String eventName, JSONObject properties, boolean isAutomaticEvent) {
-        if (hasOptedOutTracking() || (isAutomaticEvent && !mDecideMessages.shouldTrackAutomaticEvent())) {
+        if (hasOptedOutTracking() || (isAutomaticEvent)) {
             return;
         }
 
@@ -2051,9 +1693,7 @@ public class MixpanelAPI {
     private final String mToken;
     private final PeopleImpl mPeople;
     private final PersistentIdentity mPersistentIdentity;
-    private final UpdatesListener mUpdatesListener;
     private final ConnectIntegrations mConnectIntegrations;
-    private final DecideMessages mDecideMessages;
     private final Map<String, String> mDeviceInfo;
     private final Map<String, Long> mEventTimings;
     private MixpanelActivityLifecycleCallbacks mMixpanelActivityLifecycleCallbacks;

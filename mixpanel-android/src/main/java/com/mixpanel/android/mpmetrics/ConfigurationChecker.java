@@ -31,8 +31,6 @@ import com.mixpanel.android.util.MPLog;
 
     public static String LOGTAG = "MixpanelAPI.ConfigurationChecker";
 
-    private static Boolean mTakeoverActivityAvailable;
-
     public static boolean checkBasicConfiguration(Context context) {
         final PackageManager packageManager = context.getPackageManager();
         final String packageName = context.getPackageName();

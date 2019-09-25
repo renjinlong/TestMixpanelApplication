@@ -58,9 +58,6 @@ import javax.net.ssl.SSLSocketFactory;
  * <dt>com.mixpanel.android.MPConfig.DisableAppOpenEvent</dt>
  * <dd>A boolean value. If true, do not send an "$app_open" event when the MixpanelAPI object is created for the first time. Defaults to true - the $app_open event will not be sent by default.</dd>
  *
- * <dt>com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates</dt>
- * <dd>A boolean value. If true, automatically show notifications and A/B test variants. Defaults to true.</dd>
- *
  * <dt>com.mixpanel.android.MPConfig.EventsEndpoint</dt>
  * <dd>A string URL. If present, the library will attempt to send events to this endpoint rather than to the default Mixpanel endpoint.</dd>
  *
@@ -76,9 +73,6 @@ import javax.net.ssl.SSLSocketFactory;
  * <dt>com.mixpanel.android.MPConfig.DisableViewCrawler</dt>
  * <dd>A boolean value. If true, AB tests, tweaks and codeless events will be disabled. Defaults to false.</dd>
  *
- * <dt>com.mixpanel.android.MPConfig.NotificationDefaults</dt>
- * <dd>An integer number. This value is used to create a notification before API 26 (https://developer.android.com/reference/android/app/Notification.Builder.html#setDefaults(int)). Defaults to 0.</dd>
- *
  * <dt>com.mixpanel.android.MPConfig.MinimumSessionDuration</dt>
  * <dd>An integer number. The minimum session duration (ms) that is tracked in automatic events. Defaults to 10000 (10 seconds).</dd>
  *
@@ -87,9 +81,6 @@ import javax.net.ssl.SSLSocketFactory;
  *
  * <dt>com.mixpanel.android.MPConfig.TestMode</dt>
  * <dd>A boolean value. If true, in-app notifications won't be marked as seen. Defaults to false.</dd>
- *
- * <dt>com.mixpanel.android.MPConfig.ImageCacheMaxMemoryFactor</dt>
- * <dd>An integer value. The LRU cache size that Mixpanel uses to store images is calculated by the available memory divided by this factor. Defaults to 10.</dd>
  *
  * <dt>com.mixpanel.android.MPConfig.DisableViewCrawlerForProjects</dt>
  * <dd>A resource array list (e.g. @array/my_project_list). AB tests, tweaks and codeless events will be disabled for the projects from that list. Defaults to null.</dd>
@@ -222,10 +213,7 @@ public class MPConfig {
         mDisableEmulatorBindingUI = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableEmulatorBindingUI", false);
         mDisableAppOpenEvent = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableAppOpenEvent", true);
         mDisableViewCrawler = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableViewCrawler", false);
-        mImageCacheMaxMemoryFactor = metaData.getInt("com.mixpanel.android.MPConfig.ImageCacheMaxMemoryFactor", 10);
         mIgnoreInvisibleViewsEditor = metaData.getBoolean("com.mixpanel.android.MPConfig.IgnoreInvisibleViewsVisualEditor", false);
-        mAutoShowMixpanelUpdates = metaData.getBoolean("com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates", true);
-        mNotificationDefaults = metaData.getInt("com.mixpanel.android.MPConfig.NotificationDefaults", 0);
         mMinSessionDuration = metaData.getInt("com.mixpanel.android.MPConfig.MinimumSessionDuration", 10 * 1000); // 10 seconds
         mSessionTimeoutDuration = metaData.getInt("com.mixpanel.android.MPConfig.SessionTimeoutDuration", Integer.MAX_VALUE); // no timeout by default
         mUseIpAddressForGeolocation = metaData.getBoolean("com.mixpanel.android.MPConfig.UseIpAddressForGeolocation", true);
@@ -354,17 +342,8 @@ public class MPConfig {
         mPeopleEndpoint = peopleEndpoint;
     }
 
-    // Check for and show eligible in app notifications on Activity changes
-    public boolean getAutoShowMixpanelUpdates() {
-        return mAutoShowMixpanelUpdates;
-    }
-
     public boolean getIgnoreInvisibleViewsEditor() {
         return mIgnoreInvisibleViewsEditor;
-    }
-
-    public int getNotificationDefaults() {
-        return mNotificationDefaults;
     }
 
     public int getMinimumSessionDuration() {
@@ -417,11 +396,6 @@ public class MPConfig {
         return mOfflineMode;
     }
 
-    // ImageStore LRU Cache size will be availableMaxMemory() / mImageCacheMaxMemoryFactor
-    public int getImageCacheMaxMemoryFactor() {
-        return mImageCacheMaxMemoryFactor;
-    }
-
     ///////////////////////////////////////////////
 
     // Package access for testing only- do not call directly in library code
@@ -443,7 +417,6 @@ public class MPConfig {
     @Override
     public String toString() {
         return "Mixpanel (" + VERSION + ") configured with:\n" +
-                "    AutoShowMixpanelUpdates " + getAutoShowMixpanelUpdates() + "\n" +
                 "    BulkUploadLimit " + getBulkUploadLimit() + "\n" +
                 "    FlushInterval " + getFlushInterval() + "\n" +
                 "    DataExpiration " + getDataExpiration() + "\n" +
@@ -456,9 +429,7 @@ public class MPConfig {
                 "    TestMode " + getTestMode() + "\n" +
                 "    EventsEndpoint " + getEventsEndpoint() + "\n" +
                 "    PeopleEndpoint " + getPeopleEndpoint() + "\n" +
-                "    ImageCacheMaxMemoryFactor " + getImageCacheMaxMemoryFactor() + "\n" +
                 "    IgnoreInvisibleViewsEditor " + getIgnoreInvisibleViewsEditor() + "\n" +
-                "    NotificationDefaults " + getNotificationDefaults() + "\n" +
                 "    MinimumSessionDuration: " + getMinimumSessionDuration() + "\n" +
                 "    SessionTimeoutDuration: " + getSessionTimeoutDuration() + "\n" +
                 "    NotificationChannelId: " + getNotificationChannelId() + "\n" +
@@ -478,11 +449,8 @@ public class MPConfig {
     private final String[] mDisableViewCrawlerForProjects;
     private String mEventsEndpoint;
     private String mPeopleEndpoint;
-    private final boolean mAutoShowMixpanelUpdates;
     private final String mResourcePackageName;
-    private final int mImageCacheMaxMemoryFactor;
     private final boolean mIgnoreInvisibleViewsEditor;
-    private final int mNotificationDefaults;
     private final int mMinSessionDuration;
     private final int mSessionTimeoutDuration;
     private final boolean mUseIpAddressForGeolocation;

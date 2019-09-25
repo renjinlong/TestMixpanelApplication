@@ -36,10 +36,6 @@ import java.util.Locale;
     @Override
     public void onActivityStarted(Activity activity) {
         trackCampaignOpenedIfNeeded(activity.getIntent());
-
-        if (android.os.Build.VERSION.SDK_INT >= MPConfig.UI_FEATURES_MIN_API && mConfig.getAutoShowMixpanelUpdates()) {
-            mMpInstance.getPeople().showNotificationIfAvailable(activity);
-        }
     }
 
     @Override
