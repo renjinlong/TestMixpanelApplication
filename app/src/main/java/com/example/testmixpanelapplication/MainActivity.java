@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-//        mixpanel.flush();
+        mixpanel.flush();
         super.onDestroy();
     }
 }
