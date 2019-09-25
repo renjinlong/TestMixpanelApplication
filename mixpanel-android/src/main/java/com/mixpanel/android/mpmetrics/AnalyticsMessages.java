@@ -617,8 +617,8 @@ import javax.net.ssl.SSLSocketFactory;
                     ret.put("$app_version_string", applicationVersionName);
                 }
 
-                 final Integer applicationVersionCode = mSystemInformation.getAppVersionCode();
-                 if (null != applicationVersionCode) {
+                final Integer applicationVersionCode = mSystemInformation.getAppVersionCode();
+                if (null != applicationVersionCode) {
                     ret.put("$app_release", applicationVersionCode);
                     ret.put("$app_build_number", applicationVersionCode);
                 }
