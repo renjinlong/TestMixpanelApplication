@@ -10,10 +10,6 @@ import android.os.Process;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.google.android.gms.iid.InstanceID;
 import com.mixpanel.android.util.Base64Coder;
 import com.mixpanel.android.util.HttpService;
 import com.mixpanel.android.util.MPLog;
@@ -59,13 +55,13 @@ import javax.net.ssl.SSLSocketFactory;
      * for yourself.
      *
      * @param messageContext should be the Main Activity of the application
-     *     associated with these messages.
+     *                       associated with these messages.
      */
     public static AnalyticsMessages getInstance(final Context messageContext) {
         synchronized (sInstances) {
             final Context appContext = messageContext.getApplicationContext();
             AnalyticsMessages ret;
-            if (! sInstances.containsKey(appContext)) {
+            if (!sInstances.containsKey(appContext)) {
                 ret = new AnalyticsMessages(appContext);
                 sInstances.put(appContext, ret);
             } else {
@@ -104,14 +100,6 @@ import javax.net.ssl.SSLSocketFactory;
         final Message m = Message.obtain();
         m.what = INSTALL_DECIDE_CHECK;
         m.obj = check;
-
-        mWorker.runMessage(m);
-    }
-
-    public void registerForGCM(final String senderID) {
-        final Message m = Message.obtain();
-        m.what = REGISTER_FOR_GCM;
-        m.obj = senderID;
 
         mWorker.runMessage(m);
     }
@@ -260,13 +248,13 @@ import javax.net.ssl.SSLSocketFactory;
         }
 
         public boolean isDead() {
-            synchronized(mHandlerLock) {
+            synchronized (mHandlerLock) {
                 return mHandler == null;
             }
         }
 
         public void runMessage(Message msg) {
-            synchronized(mHandlerLock) {
+            synchronized (mHandlerLock) {
                 if (mHandler == null) {
                     // We died under suspicious circumstances. Don't try to send any more events.
                     logAboutMessageToMixpanel("Dead mixpanel worker dropping a message: " + msg.what);
@@ -359,7 +347,7 @@ import javax.net.ssl.SSLSocketFactory;
                         }
                     } else if (msg.what == REGISTER_FOR_GCM) {
                         final String senderId = (String) msg.obj;
-                        runGCMRegistration(senderId);
+//                        runGCMRegistration(senderId);
                     } else if (msg.what == EMPTY_QUEUES) {
                         final MixpanelDescription message = (MixpanelDescription) msg.obj;
                         token = message.getToken();
@@ -367,7 +355,7 @@ import javax.net.ssl.SSLSocketFactory;
                         mDbAdapter.cleanupAllEvents(MPDbAdapter.Table.PEOPLE, token);
                     } else if (msg.what == KILL_WORKER) {
                         MPLog.w(LOGTAG, "Worker received a hard kill. Dumping all events and force-killing. Thread id " + Thread.currentThread().getId());
-                        synchronized(mHandlerLock) {
+                        synchronized (mHandlerLock) {
                             mDbAdapter.deleteDB();
                             mHandler = null;
                             Looper.myLooper().quit();
@@ -420,47 +408,6 @@ import javax.net.ssl.SSLSocketFactory;
 
             protected long getTrackEngageRetryAfter() {
                 return mTrackEngageRetryAfter;
-            }
-
-            private void runGCMRegistration(String senderID) {
-                final String registrationId;
-                try {
-                    // We don't actually require Google Play Services to be available
-                    // (since we can't specify what version customers will be using,
-                    // and because the latest Google Play Services actually have
-                    // dependencies on Java 7)
-
-                    // Consider adding a transitive dependency on the latest
-                    // Google Play Services version and requiring Java 1.7
-                    // in the next major library release.
-                    try {
-                        final int resultCode = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(mContext);
-                        if (resultCode != ConnectionResult.SUCCESS) {
-                            MPLog.i(LOGTAG, "Can't register for push notifications, Google Play Services are not installed.");
-                            return;
-                        }
-                    } catch (RuntimeException e) {
-                        MPLog.i(LOGTAG, "Can't register for push notifications, Google Play services are not configured.");
-                        return;
-                    }
-
-                    InstanceID instanceID = InstanceID.getInstance(mContext);
-                    registrationId = instanceID.getToken(senderID, GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
-                } catch (IOException e) {
-                    MPLog.i(LOGTAG, "Exception when trying to register for GCM", e);
-                    return;
-                } catch (NoClassDefFoundError e) {
-                    MPLog.w(LOGTAG, "Google play services were not part of this build, push notifications cannot be registered or delivered");
-                    return;
-                }
-
-                MixpanelAPI.allInstances(new MixpanelAPI.InstanceProcessor() {
-                    @Override
-                    public void process(MixpanelAPI api) {
-                        MPLog.v(LOGTAG, "Using existing pushId " + registrationId);
-                        api.getPeople().setPushRegistrationId(registrationId);
-                    }
-                });
             }
 
             private void sendAllData(MPDbAdapter dbAdapter, String token) {
@@ -543,7 +490,7 @@ import javax.net.ssl.SSLSocketFactory;
                         dbAdapter.cleanupEvents(lastId, table, token, includeAutomaticEvents);
                     } else {
                         removeMessages(FLUSH_QUEUE, token);
-                        mTrackEngageRetryAfter = Math.max((long)Math.pow(2, mFailedRetries) * 60000, mTrackEngageRetryAfter);
+                        mTrackEngageRetryAfter = Math.max((long) Math.pow(2, mFailedRetries) * 60000, mTrackEngageRetryAfter);
                         mTrackEngageRetryAfter = Math.min(mTrackEngageRetryAfter, 10 * 60 * 1000); // limit 10 min
                         final Message flushMessage = Message.obtain();
                         flushMessage.what = FLUSH_QUEUE;
@@ -575,36 +522,6 @@ import javax.net.ssl.SSLSocketFactory;
                 ret.put("$manufacturer", Build.MANUFACTURER == null ? "UNKNOWN" : Build.MANUFACTURER);
                 ret.put("$brand", Build.BRAND == null ? "UNKNOWN" : Build.BRAND);
                 ret.put("$model", Build.MODEL == null ? "UNKNOWN" : Build.MODEL);
-
-                try {
-                    try {
-                        final int servicesAvailable = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(mContext);
-                        switch (servicesAvailable) {
-                            case ConnectionResult.SUCCESS:
-                                ret.put("$google_play_services", "available");
-                                break;
-                            case ConnectionResult.SERVICE_MISSING:
-                                ret.put("$google_play_services", "missing");
-                                break;
-                            case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED:
-                                ret.put("$google_play_services", "out of date");
-                                break;
-                            case ConnectionResult.SERVICE_DISABLED:
-                                ret.put("$google_play_services", "disabled");
-                                break;
-                            case ConnectionResult.SERVICE_INVALID:
-                                ret.put("$google_play_services", "invalid");
-                                break;
-                        }
-                    } catch (RuntimeException e) {
-                        // Turns out even checking for the service will cause explosions
-                        // unless we've set up meta-data
-                        ret.put("$google_play_services", "not configured");
-                    }
-
-                } catch (NoClassDefFoundError e) {
-                    ret.put("$google_play_services", "not included");
-                }
 
                 final DisplayMetrics displayMetrics = mSystemInformation.getDisplayMetrics();
                 ret.put("$screen_dpi", displayMetrics.densityDpi);
@@ -656,7 +573,7 @@ import javax.net.ssl.SSLSocketFactory;
                 final JSONObject sendProperties = getDefaultEventProperties();
                 sendProperties.put("token", eventDescription.getToken());
                 if (eventProperties != null) {
-                    for (final Iterator<?> iter = eventProperties.keys(); iter.hasNext();) {
+                    for (final Iterator<?> iter = eventProperties.keys(); iter.hasNext(); ) {
                         final String key = (String) iter.next();
                         sendProperties.put(key, eventProperties.get(key));
                     }

@@ -306,45 +306,6 @@ import com.mixpanel.android.util.MPLog;
         storeSuperProperties();
     }
 
-    public synchronized void storePushId(String registrationId) {
-        try {
-            final SharedPreferences prefs = mLoadStoredPreferences.get();
-            final SharedPreferences.Editor editor = prefs.edit();
-            editor.putString("push_id", registrationId);
-            writeEdits(editor);
-        } catch (final ExecutionException e) {
-            MPLog.e(LOGTAG, "Can't write push id to shared preferences", e.getCause());
-        } catch (final InterruptedException e) {
-            MPLog.e(LOGTAG, "Can't write push id to shared preferences", e);
-        }
-    }
-
-    public synchronized void clearPushId() {
-        try {
-            final SharedPreferences prefs = mLoadStoredPreferences.get();
-            final SharedPreferences.Editor editor = prefs.edit();
-            editor.remove("push_id");
-            writeEdits(editor);
-        } catch (final ExecutionException e) {
-            MPLog.e(LOGTAG, "Can't write push id to shared preferences", e.getCause());
-        } catch (final InterruptedException e) {
-            MPLog.e(LOGTAG, "Can't write push id to shared preferences", e);
-        }
-    }
-
-    public synchronized String getPushId() {
-        String ret = null;
-        try {
-            final SharedPreferences prefs = mLoadStoredPreferences.get();
-            ret = prefs.getString("push_id", null);
-        } catch (final ExecutionException e) {
-            MPLog.e(LOGTAG, "Can't write push id to shared preferences", e.getCause());
-        } catch (final InterruptedException e) {
-            MPLog.e(LOGTAG, "Can't write push id to shared preferences", e);
-        }
-        return ret;
-    }
-
     public synchronized void unregisterSuperProperty(String superPropertyName) {
         final JSONObject propCache = getSuperPropertiesCache();
         propCache.remove(superPropertyName);
