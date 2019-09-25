@@ -22,97 +22,90 @@ import javax.net.ssl.SSLSocketFactory;
  * options using &lt;meta-data&gt; tags inside of the &lt;application&gt; tag in your AndroidManifest.xml.
  * All settings are optional, and default to reasonable recommended values. Most users will not have to
  * set any options.
- *
+ * <p>
  * Mixpanel understands the following options:
  *
  * <dl>
- *     <dt>com.mixpanel.android.MPConfig.EnableDebugLogging</dt>
- *     <dd>A boolean value. If true, emit more detailed log messages. Defaults to false</dd>
+ * <dt>com.mixpanel.android.MPConfig.EnableDebugLogging</dt>
+ * <dd>A boolean value. If true, emit more detailed log messages. Defaults to false</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.BulkUploadLimit</dt>
- *     <dd>An integer count of messages, the maximum number of messages to queue before an upload attempt. This value should be less than 50.</dd>
+ * <dt>com.mixpanel.android.MPConfig.BulkUploadLimit</dt>
+ * <dd>An integer count of messages, the maximum number of messages to queue before an upload attempt. This value should be less than 50.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.FlushInterval</dt>
- *     <dd>An integer number of milliseconds, the maximum time to wait before an upload if the bulk upload limit isn't reached.</dd>
+ * <dt>com.mixpanel.android.MPConfig.FlushInterval</dt>
+ * <dd>An integer number of milliseconds, the maximum time to wait before an upload if the bulk upload limit isn't reached.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DebugFlushInterval</dt>
- *     <dd>An integer number of milliseconds, the maximum time to wait before an upload if the bulk upload limit isn't reached in debug mode.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DebugFlushInterval</dt>
+ * <dd>An integer number of milliseconds, the maximum time to wait before an upload if the bulk upload limit isn't reached in debug mode.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DataExpiration</dt>
- *     <dd>An integer number of milliseconds, the maximum age of records to send to Mixpanel. Corresponds to Mixpanel's server-side limit on record age.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DataExpiration</dt>
+ * <dd>An integer number of milliseconds, the maximum age of records to send to Mixpanel. Corresponds to Mixpanel's server-side limit on record age.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.MinimumDatabaseLimit</dt>
- *     <dd>An integer number of bytes. Mixpanel attempts to limit the size of its persistent data
- *          queue based on the storage capacity of the device, but will always allow queing below this limit. Higher values
- *          will take up more storage even when user storage is very full.</dd>
+ * <dt>com.mixpanel.android.MPConfig.MinimumDatabaseLimit</dt>
+ * <dd>An integer number of bytes. Mixpanel attempts to limit the size of its persistent data
+ * queue based on the storage capacity of the device, but will always allow queing below this limit. Higher values
+ * will take up more storage even when user storage is very full.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.ResourcePackageName</dt>
- *     <dd>A string java package name. Defaults to the package name of the Application. Users should set if the package name of their R class is different from the application package name due to application id settings.</dd>
+ * <dt>com.mixpanel.android.MPConfig.ResourcePackageName</dt>
+ * <dd>A string java package name. Defaults to the package name of the Application. Users should set if the package name of their R class is different from the application package name due to application id settings.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DisableGestureBindingUI</dt>
- *     <dd>A boolean value. If true, do not allow connecting to the codeless event binding or A/B testing editor using an accelerometer gesture. Defaults to false.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DisableGestureBindingUI</dt>
+ * <dd>A boolean value. If true, do not allow connecting to the codeless event binding or A/B testing editor using an accelerometer gesture. Defaults to false.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DisableEmulatorBindingUI</dt>
- *     <dd>A boolean value. If true, do not attempt to connect to the codeless event binding or A/B testing editor when running in the Android emulator. Defaults to false.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DisableEmulatorBindingUI</dt>
+ * <dd>A boolean value. If true, do not attempt to connect to the codeless event binding or A/B testing editor when running in the Android emulator. Defaults to false.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DisableAppOpenEvent</dt>
- *     <dd>A boolean value. If true, do not send an "$app_open" event when the MixpanelAPI object is created for the first time. Defaults to true - the $app_open event will not be sent by default.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DisableAppOpenEvent</dt>
+ * <dd>A boolean value. If true, do not send an "$app_open" event when the MixpanelAPI object is created for the first time. Defaults to true - the $app_open event will not be sent by default.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates</dt>
- *     <dd>A boolean value. If true, automatically show notifications and A/B test variants. Defaults to true.</dd>
+ * <dt>com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates</dt>
+ * <dd>A boolean value. If true, automatically show notifications and A/B test variants. Defaults to true.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.EventsEndpoint</dt>
- *     <dd>A string URL. If present, the library will attempt to send events to this endpoint rather than to the default Mixpanel endpoint.</dd>
+ * <dt>com.mixpanel.android.MPConfig.EventsEndpoint</dt>
+ * <dd>A string URL. If present, the library will attempt to send events to this endpoint rather than to the default Mixpanel endpoint.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.PeopleEndpoint</dt>
- *     <dd>A string URL. If present, the library will attempt to send people updates to this endpoint rather than to the default Mixpanel endpoint.</dd>
+ * <dt>com.mixpanel.android.MPConfig.PeopleEndpoint</dt>
+ * <dd>A string URL. If present, the library will attempt to send people updates to this endpoint rather than to the default Mixpanel endpoint.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DecideEndpoint</dt>
- *     <dd>A string URL. If present, the library will attempt to get notification, codeless event tracking, and A/B test variant information from this url rather than the default Mixpanel endpoint.</dd>
+ * <dt>com.mixpanel.android.MPConfig.EditorUrl</dt>
+ * <dd>A string URL. If present, the library will attempt to connect to this endpoint when in interactive editing mode, rather than to the default Mixpanel editor url.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.EditorUrl</dt>
- *     <dd>A string URL. If present, the library will attempt to connect to this endpoint when in interactive editing mode, rather than to the default Mixpanel editor url.</dd>
+ * <dt>com.mixpanel.android.MPConfig.IgnoreInvisibleViewsVisualEditor</dt>
+ * <dd>A boolean value. If true, invisible views won't be shown on Mixpanel Visual Editor (AB Test and codeless events) . Defaults to false.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.IgnoreInvisibleViewsVisualEditor</dt>
- *     <dd>A boolean value. If true, invisible views won't be shown on Mixpanel Visual Editor (AB Test and codeless events) . Defaults to false.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DisableViewCrawler</dt>
+ * <dd>A boolean value. If true, AB tests, tweaks and codeless events will be disabled. Defaults to false.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DisableViewCrawler</dt>
- *     <dd>A boolean value. If true, AB tests, tweaks and codeless events will be disabled. Defaults to false.</dd>
+ * <dt>com.mixpanel.android.MPConfig.NotificationDefaults</dt>
+ * <dd>An integer number. This value is used to create a notification before API 26 (https://developer.android.com/reference/android/app/Notification.Builder.html#setDefaults(int)). Defaults to 0.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DisableDecideChecker</dt>
- *     <dd>A boolean value. If true, the library will not query our decide endpoint and won't retrieve in-app notifications, codeless events, Ab Tests or tweaks. Defaults to false.</dd>
+ * <dt>com.mixpanel.android.MPConfig.MinimumSessionDuration</dt>
+ * <dd>An integer number. The minimum session duration (ms) that is tracked in automatic events. Defaults to 10000 (10 seconds).</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.NotificationDefaults</dt>
- *     <dd>An integer number. This value is used to create a notification before API 26 (https://developer.android.com/reference/android/app/Notification.Builder.html#setDefaults(int)). Defaults to 0.</dd>
+ * <dt>com.mixpanel.android.MPConfig.SessionTimeoutDuration</dt>
+ * <dd>An integer number. The maximum session duration (ms) that is tracked in automatic events. Defaults to Integer.MAX_VALUE (no maximum session duration).</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.MinimumSessionDuration</dt>
- *     <dd>An integer number. The minimum session duration (ms) that is tracked in automatic events. Defaults to 10000 (10 seconds).</dd>
+ * <dt>com.mixpanel.android.MPConfig.TestMode</dt>
+ * <dd>A boolean value. If true, in-app notifications won't be marked as seen. Defaults to false.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.SessionTimeoutDuration</dt>
- *     <dd>An integer number. The maximum session duration (ms) that is tracked in automatic events. Defaults to Integer.MAX_VALUE (no maximum session duration).</dd>
+ * <dt>com.mixpanel.android.MPConfig.ImageCacheMaxMemoryFactor</dt>
+ * <dd>An integer value. The LRU cache size that Mixpanel uses to store images is calculated by the available memory divided by this factor. Defaults to 10.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.TestMode</dt>
- *     <dd>A boolean value. If true, in-app notifications won't be marked as seen. Defaults to false.</dd>
+ * <dt>com.mixpanel.android.MPConfig.DisableViewCrawlerForProjects</dt>
+ * <dd>A resource array list (e.g. @array/my_project_list). AB tests, tweaks and codeless events will be disabled for the projects from that list. Defaults to null.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.ImageCacheMaxMemoryFactor</dt>
- *     <dd>An integer value. The LRU cache size that Mixpanel uses to store images is calculated by the available memory divided by this factor. Defaults to 10.</dd>
+ * <dt>com.mixpanel.android.MPConfig.UseIpAddressForGeolocation</dt>
+ * <dd>A boolean value. If true, Mixpanel will automatically determine city, region and country data using the IP address of the client.Defaults to true.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.DisableViewCrawlerForProjects</dt>
- *     <dd>A resource array list (e.g. @array/my_project_list). AB tests, tweaks and codeless events will be disabled for the projects from that list. Defaults to null.</dd>
+ * <dt>com.mixpanel.android.MPConfig.NotificationChannelId</dt>
+ * <dd>An string value. If present, the library will use this id when creating a notification channel. Applicable only for Android 26 and above.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.UseIpAddressForGeolocation</dt>
- *     <dd>A boolean value. If true, Mixpanel will automatically determine city, region and country data using the IP address of the client.Defaults to true.</dd>
+ * <dt>com.mixpanel.android.MPConfig.NotificationChannelName</dt>
+ * <dd>An string value. If present, the library will use this user-visible name for our notification channel. Applicable only for Android 26 and above. Defaults to the application name.</dd>
  *
- *     <dt>com.mixpanel.android.MPConfig.NotificationChannelId</dt>
- *     <dd>An string value. If present, the library will use this id when creating a notification channel. Applicable only for Android 26 and above.</dd>
- *
- *     <dt>com.mixpanel.android.MPConfig.NotificationChannelName</dt>
- *     <dd>An string value. If present, the library will use this user-visible name for our notification channel. Applicable only for Android 26 and above. Defaults to the application name.</dd>
- *
- *     <dt>com.mixpanel.android.MPConfig.NotificationChannelImportance</dt>
- *     <dd>An integer number. Importance of the notification channel (see https://developer.android.com/reference/android/app/NotificationManager.html). Defaults to 3 (IMPORTANCE_DEFAULT). Applicable only for Android 26 and above.</dd>
+ * <dt>com.mixpanel.android.MPConfig.NotificationChannelImportance</dt>
+ * <dd>An integer number. Importance of the notification channel (see https://developer.android.com/reference/android/app/NotificationManager.html). Defaults to 3 (IMPORTANCE_DEFAULT). Applicable only for Android 26 and above.</dd>
  * </dl>
- *
  */
 public class MPConfig {
 
@@ -150,18 +143,18 @@ public class MPConfig {
      * That means it will ignore settings you associated with the default SSLSocketFactory in the
      * schema registry or in underlying HTTP libraries. If you'd prefer for Mixpanel to use your
      * own SSL settings, you'll need to call setSSLSocketFactory early in your code, like this
-     *
+     * <p>
      * {@code
      * <pre>
      *     MPConfig.getInstance(context).setSSLSocketFactory(someCustomizedSocketFactory);
      * </pre>
      * }
-     *
+     * <p>
      * Your settings will be globally available to all Mixpanel instances, and will be used for
      * all SSL connections in the library. The call is thread safe, but should be done before
      * your first call to MixpanelAPI.getInstance to insure that the library never uses it's
      * default.
-     *
+     * <p>
      * The given socket factory may be used from multiple threads, which is safe for the system
      * SSLSocketFactory class, but if you pass a subclass you should ensure that it is thread-safe
      * before passing it to Mixpanel.
@@ -176,18 +169,18 @@ public class MPConfig {
      * {@link OfflineMode} allows Mixpanel to be in-sync with client offline internal logic.
      * If you want to integrate your own logic with Mixpanel you'll need to call
      * {@link #setOfflineMode(OfflineMode)} early in your code, like this
-     *
+     * <p>
      * {@code
      * <pre>
      *     MPConfig.getInstance(context).setOfflineMode(OfflineModeImplementation);
      * </pre>
      * }
-     *
+     * <p>
      * Your settings will be globally available to all Mixpanel instances, and will be used across
      * all the library. The call is thread safe, but should be done before
      * your first call to MixpanelAPI.getInstance to insure that the library never uses it's
      * default.
-     *
+     * <p>
      * The given {@link OfflineMode} may be used from multiple threads, you should ensure that
      * your implementation is thread-safe before passing it to Mixpanel.
      *
@@ -229,7 +222,6 @@ public class MPConfig {
         mDisableEmulatorBindingUI = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableEmulatorBindingUI", false);
         mDisableAppOpenEvent = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableAppOpenEvent", true);
         mDisableViewCrawler = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableViewCrawler", false);
-        mDisableDecideChecker = metaData.getBoolean("com.mixpanel.android.MPConfig.DisableDecideChecker", false);
         mImageCacheMaxMemoryFactor = metaData.getInt("com.mixpanel.android.MPConfig.ImageCacheMaxMemoryFactor", 10);
         mIgnoreInvisibleViewsEditor = metaData.getBoolean("com.mixpanel.android.MPConfig.IgnoreInvisibleViewsVisualEditor", false);
         mAutoShowMixpanelUpdates = metaData.getBoolean("com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates", true);
@@ -252,7 +244,7 @@ public class MPConfig {
                     throw new NumberFormatException(dataExpirationMetaData.toString() + " is not a number.");
                 }
             } catch (Exception e) {
-                MPLog.e(LOGTAG,"Error parsing com.mixpanel.android.MPConfig.DataExpiration meta-data value", e);
+                MPLog.e(LOGTAG, "Error parsing com.mixpanel.android.MPConfig.DataExpiration meta-data value", e);
             }
         }
         mDataExpiration = dataExpirationLong;
@@ -283,13 +275,6 @@ public class MPConfig {
             setMixpanelPeopleEndpoint();
         }
 
-        String decideEndpoint = metaData.getString("com.mixpanel.android.MPConfig.DecideEndpoint");
-        if (decideEndpoint != null) {
-            setDecideEndpoint(decideEndpoint);
-        } else {
-            setMixpanelDecideEndpoint();
-        }
-
         int resourceId = metaData.getInt("com.mixpanel.android.MPConfig.DisableViewCrawlerForProjects", -1);
         if (resourceId != -1) {
             mDisableViewCrawlerForProjects = context.getResources().getStringArray(resourceId);
@@ -315,7 +300,9 @@ public class MPConfig {
         return mDataExpiration;
     }
 
-    public int getMinimumDatabaseLimit() { return mMinimumDatabaseLimit; }
+    public int getMinimumDatabaseLimit() {
+        return mMinimumDatabaseLimit;
+    }
 
     public boolean getDisableGestureBindingUI() {
         return mDisableGestureBindingUI;
@@ -333,7 +320,9 @@ public class MPConfig {
         return mDisableViewCrawler;
     }
 
-    public String[] getDisableViewCrawlerForProjects() { return mDisableViewCrawlerForProjects; }
+    public String[] getDisableViewCrawlerForProjects() {
+        return mDisableViewCrawlerForProjects;
+    }
 
     public boolean getTestMode() {
         return mTestMode;
@@ -365,26 +354,9 @@ public class MPConfig {
         mPeopleEndpoint = peopleEndpoint;
     }
 
-    // Preferred URL for pulling decide data
-    public String getDecideEndpoint() {
-        return mDecideEndpoint;
-    }
-
-    public void setMixpanelDecideEndpoint() {
-        setDecideEndpoint(MPConstants.URL.DECIDE);
-    }
-
-    public void setDecideEndpoint(String decideEndpoint) {
-        mDecideEndpoint = decideEndpoint;
-    }
-
     // Check for and show eligible in app notifications on Activity changes
     public boolean getAutoShowMixpanelUpdates() {
         return mAutoShowMixpanelUpdates;
-    }
-
-    public boolean getDisableDecideChecker() {
-        return mDisableDecideChecker;
     }
 
     public boolean getIgnoreInvisibleViewsEditor() {
@@ -453,7 +425,8 @@ public class MPConfig {
     ///////////////////////////////////////////////
 
     // Package access for testing only- do not call directly in library code
-    /* package */ static MPConfig readConfig(Context appContext) {
+    /* package */
+    static MPConfig readConfig(Context appContext) {
         final String packageName = appContext.getPackageName();
         try {
             final ApplicationInfo appInfo = appContext.getPackageManager().getApplicationInfo(packageName, PackageManager.GET_META_DATA);
@@ -483,9 +456,7 @@ public class MPConfig {
                 "    TestMode " + getTestMode() + "\n" +
                 "    EventsEndpoint " + getEventsEndpoint() + "\n" +
                 "    PeopleEndpoint " + getPeopleEndpoint() + "\n" +
-                "    DecideEndpoint " + getDecideEndpoint() + "\n" +
                 "    ImageCacheMaxMemoryFactor " + getImageCacheMaxMemoryFactor() + "\n" +
-                "    DisableDecideChecker " + getDisableDecideChecker() + "\n" +
                 "    IgnoreInvisibleViewsEditor " + getIgnoreInvisibleViewsEditor() + "\n" +
                 "    NotificationDefaults " + getNotificationDefaults() + "\n" +
                 "    MinimumSessionDuration: " + getMinimumSessionDuration() + "\n" +
@@ -507,10 +478,8 @@ public class MPConfig {
     private final String[] mDisableViewCrawlerForProjects;
     private String mEventsEndpoint;
     private String mPeopleEndpoint;
-    private String mDecideEndpoint;
     private final boolean mAutoShowMixpanelUpdates;
     private final String mResourcePackageName;
-    private final boolean mDisableDecideChecker;
     private final int mImageCacheMaxMemoryFactor;
     private final boolean mIgnoreInvisibleViewsEditor;
     private final int mNotificationDefaults;

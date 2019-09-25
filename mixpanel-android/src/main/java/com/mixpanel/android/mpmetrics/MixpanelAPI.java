@@ -280,10 +280,6 @@ public class MixpanelAPI {
             mPersistentIdentity.setHasLaunched();
         }
 
-        if (!mConfig.getDisableDecideChecker()) {
-            mMessages.installDecideCheck(mDecideMessages);
-        }
-
         registerMixpanelActivityLifecycleCallbacks();
 
         if (sendAppOpen()) {

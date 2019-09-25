@@ -7,7 +7,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import android.os.SystemClock;
 import android.util.DisplayMetrics;
 
 import com.mixpanel.android.util.Base64Coder;
@@ -92,14 +91,6 @@ import javax.net.ssl.SSLSocketFactory;
         m.what = FLUSH_QUEUE;
         m.obj = flushDescription.getToken();
         m.arg1 = flushDescription.shouldCheckDecide() ? 1 : 0;
-
-        mWorker.runMessage(m);
-    }
-
-    public void installDecideCheck(final DecideMessages check) {
-        final Message m = Message.obtain();
-        m.what = INSTALL_DECIDE_CHECK;
-        m.obj = check;
 
         mWorker.runMessage(m);
     }
@@ -278,12 +269,7 @@ import javax.net.ssl.SSLSocketFactory;
                 super(looper);
                 mDbAdapter = null;
                 mSystemInformation = SystemInformation.getInstance(mContext);
-                mDecideChecker = createDecideChecker();
                 mFlushInterval = mConfig.getFlushInterval();
-            }
-
-            protected DecideChecker createDecideChecker() {
-                return new DecideChecker(mContext, mConfig);
             }
 
             @Override
@@ -313,10 +299,6 @@ import javax.net.ssl.SSLSocketFactory;
                             logAboutMessageToMixpanel("    " + message.toString());
                             token = eventDescription.getToken();
 
-                            DecideMessages decide = mDecideChecker.getDecideMessages(token);
-                            if (decide != null && eventDescription.isAutomatic() && !decide.shouldTrackAutomaticEvent()) {
-                                return;
-                            }
                             returnCode = mDbAdapter.addJSON(message, token, MPDbAdapter.Table.EVENTS, eventDescription.isAutomatic());
                         } catch (final JSONException e) {
                             MPLog.e(LOGTAG, "Exception tracking event " + eventDescription.getEventName(), e);
@@ -325,26 +307,9 @@ import javax.net.ssl.SSLSocketFactory;
                         logAboutMessageToMixpanel("Flushing queue due to scheduled or forced flush");
                         updateFlushFrequency();
                         token = (String) msg.obj;
-                        boolean shouldCheckDecide = msg.arg1 == 1 ? true : false;
                         sendAllData(mDbAdapter, token);
-                        if (shouldCheckDecide && SystemClock.elapsedRealtime() >= mDecideRetryAfter) {
-                            try {
-                                mDecideChecker.runDecideCheck(token, getPoster());
-                            } catch (RemoteService.ServiceUnavailableException e) {
-                                mDecideRetryAfter = SystemClock.elapsedRealtime() + e.getRetryAfter() * 1000;
-                            }
-                        }
                     } else if (msg.what == INSTALL_DECIDE_CHECK) {
                         logAboutMessageToMixpanel("Installing a check for in-app notifications");
-                        final DecideMessages check = (DecideMessages) msg.obj;
-                        mDecideChecker.addDecideCheck(check);
-                        if (SystemClock.elapsedRealtime() >= mDecideRetryAfter) {
-                            try {
-                                mDecideChecker.runDecideCheck(check.getToken(), getPoster());
-                            } catch (RemoteService.ServiceUnavailableException e) {
-                                mDecideRetryAfter = SystemClock.elapsedRealtime() + e.getRetryAfter() * 1000;
-                            }
-                        }
                     } else if (msg.what == REGISTER_FOR_GCM) {
                         final String senderId = (String) msg.obj;
 //                        runGCMRegistration(senderId);
@@ -369,13 +334,6 @@ import javax.net.ssl.SSLSocketFactory;
                         logAboutMessageToMixpanel("Flushing queue due to bulk upload limit (" + returnCode + ") for project " + token);
                         updateFlushFrequency();
                         sendAllData(mDbAdapter, token);
-                        if (SystemClock.elapsedRealtime() >= mDecideRetryAfter) {
-                            try {
-                                mDecideChecker.runDecideCheck(token, getPoster());
-                            } catch (RemoteService.ServiceUnavailableException e) {
-                                mDecideRetryAfter = SystemClock.elapsedRealtime() + e.getRetryAfter() * 1000;
-                            }
-                        }
                     } else if (returnCode > 0 && !hasMessages(FLUSH_QUEUE, token)) {
                         // The !hasMessages(FLUSH_QUEUE, token) check is a courtesy for the common case
                         // of delayed flushes already enqueued from inside of this thread.
@@ -423,11 +381,7 @@ import javax.net.ssl.SSLSocketFactory;
 
             private void sendData(MPDbAdapter dbAdapter, String token, MPDbAdapter.Table table, String url) {
                 final RemoteService poster = getPoster();
-                DecideMessages decideMessages = mDecideChecker.getDecideMessages(token);
-                boolean includeAutomaticEvents = true;
-                if (decideMessages == null || decideMessages.isAutomaticEventsEnabled() == null) {
-                    includeAutomaticEvents = false;
-                }
+                boolean includeAutomaticEvents = false;
                 String[] eventsData = dbAdapter.generateDataString(table, token, includeAutomaticEvents);
                 Integer queueCount = 0;
                 if (eventsData != null) {
@@ -585,7 +539,6 @@ import javax.net.ssl.SSLSocketFactory;
             }
 
             private MPDbAdapter mDbAdapter;
-            private final DecideChecker mDecideChecker;
             private final long mFlushInterval;
             private long mDecideRetryAfter;
             private long mTrackEngageRetryAfter;
