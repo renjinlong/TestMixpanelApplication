@@ -2,8 +2,6 @@ package com.mixpanel.android.mpmetrics;
 
 import android.test.AndroidTestCase;
 
-import com.mixpanel.android.viewcrawler.UpdatesFromMixpanel;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,47 +25,7 @@ public class DecideMessagesTest extends AndroidTestCase {
             }
         };
 
-        mMockUpdates = new UpdatesFromMixpanel() {
-            @Override
-            public void startUpdates() {
-                ; // do nothing
-            }
-
-            @Override
-            public void applyPersistedUpdates() {
-            }
-
-            @Override
-            public void storeVariants(JSONArray variants) {
-            }
-
-            @Override
-            public void setEventBindings(JSONArray bindings) {
-                ; // TODO should observe bindings here
-            }
-
-            @Override
-            public void setVariants(JSONArray variants) {
-                ; // TODO should observe this
-            }
-
-            @Override
-            public Tweaks getTweaks() {
-                return null;
-            }
-
-            @Override
-            public void addOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-
-            }
-
-            @Override
-            public void removeOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-
-            }
-        };
-
-        mDecideMessages = new DecideMessages(getContext(), "TEST TOKEN", mMockListener, mMockUpdates, new HashSet<Integer>());
+        mDecideMessages = new DecideMessages(getContext(), "TEST TOKEN", mMockListener, new HashSet<Integer>());
         mSomeNotifications = new ArrayList<>();
 
         JSONObject notifsDesc1 = new JSONObject(
@@ -88,7 +46,7 @@ public class DecideMessagesTest extends AndroidTestCase {
         mDecideMessages.reportResults(mSomeNotifications, mSomeBindings, mSomeVariants, mIsAutomaticEventsEnabled, null);
 
         final List<InAppNotification> fakeNotifications = new ArrayList<InAppNotification>(mSomeNotifications.size());
-        for (final InAppNotification real: mSomeNotifications) {
+        for (final InAppNotification real : mSomeNotifications) {
             if (real.getClass().isInstance(TakeoverInAppNotification.class)) {
                 fakeNotifications.add(new TakeoverInAppNotification(new JSONObject(real.toString())));
             } else if (real.getClass().isInstance(MiniInAppNotification.class)) {
@@ -157,7 +115,6 @@ public class DecideMessagesTest extends AndroidTestCase {
 
     private BlockingQueue<String> mListenerCalls;
     private DecideMessages.OnNewResultsListener mMockListener;
-    private UpdatesFromMixpanel mMockUpdates;
     private DecideMessages mDecideMessages;
     private JSONArray mSomeBindings;
     private JSONArray mSomeVariants;

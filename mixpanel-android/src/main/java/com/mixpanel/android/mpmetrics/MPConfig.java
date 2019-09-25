@@ -294,12 +294,6 @@ public class MPConfig {
             setMixpanelDecideEndpoint();
         }
 
-        String editorUrl = metaData.getString("com.mixpanel.android.MPConfig.EditorUrl");
-        if (null == editorUrl) {
-            editorUrl = MPConstants.URL.SWITCHBOARD;
-        }
-        mEditorUrl = editorUrl;
-
         int resourceId = metaData.getInt("com.mixpanel.android.MPConfig.DisableViewCrawlerForProjects", -1);
         if (resourceId != -1) {
             mDisableViewCrawlerForProjects = context.getResources().getStringArray(resourceId);
@@ -391,11 +385,6 @@ public class MPConfig {
     // Check for and show eligible in app notifications on Activity changes
     public boolean getAutoShowMixpanelUpdates() {
         return mAutoShowMixpanelUpdates;
-    }
-
-    // Preferred URL for connecting to the editor websocket
-    public String getEditorUrl() {
-        return mEditorUrl;
     }
 
     public boolean getDisableDecideChecker() {
@@ -503,7 +492,6 @@ public class MPConfig {
                 "    EventsEndpoint " + getEventsEndpoint() + "\n" +
                 "    PeopleEndpoint " + getPeopleEndpoint() + "\n" +
                 "    DecideEndpoint " + getDecideEndpoint() + "\n" +
-                "    EditorUrl " + getEditorUrl() + "\n" +
                 "    ImageCacheMaxMemoryFactor " + getImageCacheMaxMemoryFactor() + "\n" +
                 "    DisableDecideChecker " + getDisableDecideChecker() + "\n" +
                 "    IgnoreInvisibleViewsEditor " + getIgnoreInvisibleViewsEditor() + "\n" +
@@ -531,7 +519,6 @@ public class MPConfig {
     private String mPeopleEndpoint;
     private String mDecideEndpoint;
     private final boolean mAutoShowMixpanelUpdates;
-    private final String mEditorUrl;
     private final String mResourcePackageName;
     private final boolean mDisableDecideChecker;
     private final int mImageCacheMaxMemoryFactor;

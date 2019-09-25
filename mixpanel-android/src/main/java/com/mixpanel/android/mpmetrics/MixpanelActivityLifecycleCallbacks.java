@@ -10,8 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.mixpanel.android.viewcrawler.GestureTracker;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -42,7 +40,6 @@ import java.util.Locale;
         if (android.os.Build.VERSION.SDK_INT >= MPConfig.UI_FEATURES_MIN_API && mConfig.getAutoShowMixpanelUpdates()) {
             mMpInstance.getPeople().showNotificationIfAvailable(activity);
         }
-        new GestureTracker(mMpInstance, activity);
     }
 
     @Override
@@ -88,9 +85,6 @@ import java.util.Locale;
 
     @Override
     public void onActivityResumed(Activity activity) {
-        if (android.os.Build.VERSION.SDK_INT >= MPConfig.UI_FEATURES_MIN_API && mConfig.getAutoShowMixpanelUpdates()) {
-            mMpInstance.getPeople().joinExperimentIfAvailable();
-        }
 
         mPaused = false;
         boolean wasBackground = !mIsForeground;

@@ -13,7 +13,6 @@ import android.test.AndroidTestCase;
 import com.mixpanel.android.util.HttpService;
 import com.mixpanel.android.util.ImageStore;
 import com.mixpanel.android.util.RemoteService;
-import com.mixpanel.android.viewcrawler.UpdatesFromMixpanel;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -88,7 +87,9 @@ public class DecideFunctionalTest extends AndroidTestCase {
             }
 
             @Override
-            protected MPConfig getConfig(Context context) { return mMockConfig; }
+            protected MPConfig getConfig(Context context) {
+                return mMockConfig;
+            }
 
             // this is to pass the mock poster to image store
             @Override
@@ -128,93 +129,8 @@ public class DecideFunctionalTest extends AndroidTestCase {
             properties.putOpt("$android_device_model", Build.MODEL);
             queryBuilder.append(URLEncoder.encode(properties.toString(), "utf-8"));
             mAppProperties = queryBuilder.toString();
-        } catch (Exception e) {}
-    }
-
-    public void testDecideChecks() {
-        // Should not make any requests on construction if the user has not been identified
-        mExpectations.expect("ALWAYS WRONG", "ALWAYS WRONG");
-
-        MixpanelAPI api = new TestUtils.CleanMixpanelAPI(getContext(), mMockPreferences, "TEST TOKEN") {
-            @Override
-            AnalyticsMessages getAnalyticsMessages() {
-                return mMockMessages;
-            }
-
-            @Override
-            UpdatesFromMixpanel constructUpdatesFromMixpanel(final Context context, final String token) {
-                return new MockUpdates();
-            }
-
-            @Override
-            DecideMessages constructDecideUpdates(String token, DecideMessages.OnNewResultsListener listener, UpdatesFromMixpanel binder) {
-                return new MockMessages(token, listener, binder, new HashSet<Integer>());
-            }
-        };
-
-        // Should make a request on identify
-        mExpectations.expect(
-            "https://decide.mixpanel.com/decide?version=1&lib=android&token=TEST+TOKEN&distinct_id=DECIDE+CHECKS+ID+1" + mAppProperties,
-             "{" +
-                  "\"notifications\":[{\"id\": 119911, \"message_id\": 4321, \"type\": \"takeover\", \"body\": \"Hook me up, yo!\", \"body_color\": 4294901760, \"title\": null, \"title_color\": 4278255360, \"image_url\": \"http://mixpanel.com/Balok.jpg\", \"bg_color\": 3909091328, \"close_color\": 4294967295, \"extras\": {\"image_fade\": true},\"buttons\": [{\"text\": \"Button!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}, {\"text\": \"Button 2!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}]}]," +
-                  "\"event_bindings\": [{\"event_name\":\"EVENT NAME\",\"path\":[{\"index\":0,\"view_class\":\"com.android.internal.policy.impl.PhoneWindow.DecorView\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarOverlayLayout\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarContainer\"}],\"target_activity\":\"ACTIVITY\",\"event_type\":\"EVENT TYPE\"}]" +
-             "}"
-        );
-        api.getPeople().identify("DECIDE CHECKS ID 1");
-        mExpectations.checkExpectations();
-
-        // We should be done, and Updates should have our goodies waiting
-        {
-            final InAppNotification shouldExistNotification = api.getPeople().getNotificationIfAvailable();
-            assertEquals(shouldExistNotification.getId(), 119911);
+        } catch (Exception e) {
         }
-
-        assertNull(api.getPeople().getNotificationIfAvailable());
-
-        // We should run a new check on every flush (right before the flush)
-        mExpectations.expect(
-            "https://decide.mixpanel.com/decide?version=1&lib=android&token=TEST+TOKEN&distinct_id=DECIDE+CHECKS+ID+1" + mAppProperties,
-            "{" +
-                    "\"notifications\":[{\"id\": 3333, \"message_id\": 4321, \"type\": \"takeover\", \"body\": \"Hook me up, yo!\", \"body_color\": 4294901760, \"title\": null, \"title_color\": 4278255360, \"image_url\": \"http://mixpanel.com/Balok.jpg\", \"bg_color\": 3909091328, \"close_color\": 4294967295, \"extras\": {\"image_fade\": true},\"buttons\": [{\"text\": \"Button!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}, {\"text\": \"Button 2!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}]}]," +
-                    "\"event_bindings\": [{\"event_name\":\"EVENT NAME\",\"path\":[{\"index\":0,\"view_class\":\"com.android.internal.policy.impl.PhoneWindow.DecorView\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarOverlayLayout\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarContainer\"}],\"target_activity\":\"ACTIVITY\",\"event_type\":\"EVENT TYPE\"}]" +
-            "}"
-         );
-        api.flush();
-        mExpectations.checkExpectations();
-
-        {
-            final InAppNotification shouldExistNotification = api.getPeople().getNotificationIfAvailable();
-            assertEquals(shouldExistNotification.getId(), 3333);
-        }
-
-        assertNull(api.getPeople().getNotificationIfAvailable());
-
-        // We should check, but IGNORE repeated objects when we see them come through
-        mExpectations.expect(
-            "https://decide.mixpanel.com/decide?version=1&lib=android&token=TEST+TOKEN&distinct_id=DECIDE+CHECKS+ID+1" + mAppProperties,
-            "{" +
-                    "\"notifications\":[{\"id\": 119911, \"message_id\": 4321, \"type\": \"takeover\", \"body\": \"Hook me up, yo!\", \"body_color\": 4294901760, \"title\": null, \"title_color\": 4278255360, \"image_url\": \"http://mixpanel.com/Balok.jpg\", \"bg_color\": 3909091328, \"close_color\": 4294967295, \"extras\": {\"image_fade\": true},\"buttons\": [{\"text\": \"Button!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}, {\"text\": \"Button 2!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}]}]," +
-                    "\"event_bindings\": [{\"event_name\":\"EVENT NAME\",\"path\":[{\"index\":0,\"view_class\":\"com.android.internal.policy.impl.PhoneWindow.DecorView\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarOverlayLayout\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarContainer\"}],\"target_activity\":\"ACTIVITY\",\"event_type\":\"EVENT TYPE\"}]" +
-            "}"
-        );
-        api.flush();
-        mExpectations.checkExpectations();
-        assertNull(api.getPeople().getNotificationIfAvailable());
-
-        // Seen never changes, even if we re-identify
-        mExpectations.expect(
-            "https://decide.mixpanel.com/decide?version=1&lib=android&token=TEST+TOKEN&distinct_id=DECIDE+CHECKS+ID+2" + mAppProperties,
-            "{" +
-                    "\"notifications\":[{\"id\": 119911, \"message_id\": 4321, \"type\": \"takeover\", \"body\": \"Hook me up, yo!\", \"body_color\": 4294901760, \"title\": null, \"title_color\": 4278255360, \"image_url\": \"http://mixpanel.com/Balok.jpg\", \"bg_color\": 3909091328, \"close_color\": 4294967295, \"extras\": {\"image_fade\": true},\"buttons\": [{\"text\": \"Button!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}, {\"text\": \"Button 2!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}]}]," +
-                    "\"event_bindings\": [{\"event_name\":\"EVENT NAME\",\"path\":[{\"index\":0,\"view_class\":\"com.android.internal.policy.impl.PhoneWindow.DecorView\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarOverlayLayout\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarContainer\"}],\"target_activity\":\"ACTIVITY\",\"event_type\":\"EVENT TYPE\"}]" +
-            "}"
-        );
-        api.getPeople().identify("DECIDE CHECKS ID 2");
-        api.flush();
-
-        mExpectations.checkExpectations();
-
-        assertNull(api.getPeople().getNotificationIfAvailable());
     }
 
     public void testDecideChecksOnConstruction() {
@@ -228,22 +144,17 @@ public class DecideFunctionalTest extends AndroidTestCase {
 
         // We should run a check on construction if we are constructed with a people distinct id
         mExpectations.expect(
-            "https://decide.mixpanel.com/decide?version=1&lib=android&token=TEST+IDENTIFIED+ON+CONSTRUCTION&distinct_id=Present+Before+Construction" + mAppProperties,
-            "{" +
-                    "\"notifications\":[{\"id\": 3333, \"message_id\": 4321, \"type\": \"takeover\", \"body\": \"Hook me up, yo!\", \"body_color\": 4294901760, \"title\": null, \"title_color\": 4278255360, \"image_url\": \"http://mixpanel.com/Balok.jpg\", \"bg_color\": 3909091328, \"close_color\": 4294967295, \"extras\": {\"image_fade\": true},\"buttons\": [{\"text\": \"Button!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}, {\"text\": \"Button 2!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}]}]," +
-                    "\"event_bindings\": [{\"event_name\":\"EVENT NAME\",\"path\":[{\"index\":0,\"view_class\":\"com.android.internal.policy.impl.PhoneWindow.DecorView\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarOverlayLayout\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarContainer\"}],\"target_activity\":\"ACTIVITY\",\"event_type\":\"EVENT TYPE\"}]" +
-            "}"
+                "https://decide.mixpanel.com/decide?version=1&lib=android&token=TEST+IDENTIFIED+ON+CONSTRUCTION&distinct_id=Present+Before+Construction" + mAppProperties,
+                "{" +
+                        "\"notifications\":[{\"id\": 3333, \"message_id\": 4321, \"type\": \"takeover\", \"body\": \"Hook me up, yo!\", \"body_color\": 4294901760, \"title\": null, \"title_color\": 4278255360, \"image_url\": \"http://mixpanel.com/Balok.jpg\", \"bg_color\": 3909091328, \"close_color\": 4294967295, \"extras\": {\"image_fade\": true},\"buttons\": [{\"text\": \"Button!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}, {\"text\": \"Button 2!\", \"text_color\": 4278190335, \"bg_color\": 4294967040, \"border_color\": 4278255615, \"cta_url\": \"hellomixpanel://deeplink/howareyou\"}]}]," +
+                        "\"event_bindings\": [{\"event_name\":\"EVENT NAME\",\"path\":[{\"index\":0,\"view_class\":\"com.android.internal.policy.impl.PhoneWindow.DecorView\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarOverlayLayout\"},{\"index\":0,\"view_class\":\"com.android.internal.widget.ActionBarContainer\"}],\"target_activity\":\"ACTIVITY\",\"event_type\":\"EVENT TYPE\"}]" +
+                        "}"
         );
 
         MixpanelAPI api = new MixpanelAPI(getContext(), mMockPreferences, useToken, false) {
             @Override
             AnalyticsMessages getAnalyticsMessages() {
                 return mMockMessages;
-            }
-
-            @Override
-            DecideMessages constructDecideUpdates(String token, DecideMessages.OnNewResultsListener listener, UpdatesFromMixpanel binder) {
-                return new MockMessages(token, listener, binder, new HashSet<Integer>());
             }
 
             @Override
@@ -335,8 +246,8 @@ public class DecideFunctionalTest extends AndroidTestCase {
     }
 
     private class MockMessages extends DecideMessages {
-        public MockMessages(final String token, final OnNewResultsListener listener, final UpdatesFromMixpanel binder, HashSet<Integer> seenNotificationIds) {
-            super(getContext(), token, listener, binder, seenNotificationIds);
+        public MockMessages(final String token, final OnNewResultsListener listener, HashSet<Integer> seenNotificationIds) {
+            super(getContext(), token, listener, seenNotificationIds);
         }
 
         @Override
@@ -347,47 +258,6 @@ public class DecideFunctionalTest extends AndroidTestCase {
                                   JSONArray integrations) {
             super.reportResults(newNotifications, eventBindings, variants, automaticEvents, integrations);
             mExpectations.resolve();
-        }
-    }
-
-    private class MockUpdates implements UpdatesFromMixpanel {
-
-        @Override
-        public void applyPersistedUpdates() {
-        }
-
-        @Override
-        public void storeVariants(JSONArray variants) {
-        }
-
-        @Override
-        public void startUpdates() {
-            ;
-        }
-
-        @Override
-        public void setEventBindings(JSONArray bindings) {
-            ; // TODO we need to test that (possibly empty, never null) bindings come through
-        }
-
-        @Override
-        public void setVariants(JSONArray variants) {
-            ;
-        }
-
-        @Override
-        public Tweaks getTweaks() {
-            return null;
-        }
-
-        @Override
-        public void addOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-
-        }
-
-        @Override
-        public void removeOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-
         }
     }
 

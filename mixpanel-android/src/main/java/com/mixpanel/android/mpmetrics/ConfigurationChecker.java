@@ -1,20 +1,9 @@
 package com.mixpanel.android.mpmetrics;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.pm.ResolveInfo;
-import android.os.Build;
 
-import com.mixpanel.android.takeoverinapp.TakeoverInAppActivity;
 import com.mixpanel.android.util.MPLog;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /*
  * Copyright 2012 Google Inc.
@@ -64,32 +53,5 @@ import java.util.Set;
 
     public static boolean checkPushConfiguration(Context context) {
         return false;
-    }
-
-    public static boolean checkTakeoverInAppActivityAvailable(Context context) {
-        if (mTakeoverActivityAvailable == null) {
-            if (Build.VERSION.SDK_INT < MPConfig.UI_FEATURES_MIN_API) {
-                // No need to log, TakeoverInAppActivity doesn't work on this platform.
-                mTakeoverActivityAvailable = false;
-                return mTakeoverActivityAvailable;
-            }
-
-            final Intent takeoverInAppIntent = new Intent(context, TakeoverInAppActivity.class);
-            takeoverInAppIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            takeoverInAppIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-
-            final PackageManager packageManager = context.getPackageManager();
-            final List<ResolveInfo> intentActivities = packageManager.queryIntentActivities(takeoverInAppIntent, 0);
-            if (intentActivities.size() == 0) {
-                MPLog.w(LOGTAG, TakeoverInAppActivity.class.getName() + " is not registered as an activity in your application, so takeover in-apps can't be shown.");
-                MPLog.i(LOGTAG, "Please add the child tag <activity android:name=\"com.mixpanel.android.takeoverinapp.TakeoverInAppActivity\" /> to your <application> tag.");
-                mTakeoverActivityAvailable = false;
-                return mTakeoverActivityAvailable;
-            }
-
-            mTakeoverActivityAvailable = true;
-        }
-
-        return mTakeoverActivityAvailable;
     }
 }

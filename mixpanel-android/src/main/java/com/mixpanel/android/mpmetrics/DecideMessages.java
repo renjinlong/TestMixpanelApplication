@@ -3,7 +3,6 @@ package com.mixpanel.android.mpmetrics;
 import android.content.Context;
 
 import com.mixpanel.android.util.MPLog;
-import com.mixpanel.android.viewcrawler.UpdatesFromMixpanel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,11 +20,10 @@ import java.util.Set;
         void onNewResults();
     }
 
-    public DecideMessages(Context context, String token, OnNewResultsListener listener, UpdatesFromMixpanel updatesFromMixpanel, HashSet<Integer> notificationIds) {
+    public DecideMessages(Context context, String token, OnNewResultsListener listener, HashSet<Integer> notificationIds) {
         mContext = context;
         mToken = token;
         mListener = listener;
-        mUpdatesFromMixpanel = updatesFromMixpanel;
 
         mDistinctId = null;
         mUnseenNotifications = new LinkedList<InAppNotification>();
@@ -41,7 +39,7 @@ import java.util.Set;
     // Called from other synchronized code. Do not call into other synchronized code or you'll
     // risk deadlock
     public synchronized void setDistinctId(String distinctId) {
-        if (mDistinctId == null || !mDistinctId.equals(distinctId)){
+        if (mDistinctId == null || !mDistinctId.equals(distinctId)) {
             mUnseenNotifications.clear();
         }
         mDistinctId = distinctId;
@@ -60,11 +58,9 @@ import java.util.Set;
         int newVariantsLength = variants.length();
         boolean hasNewVariants = false;
 
-        mUpdatesFromMixpanel.setEventBindings(eventBindings);
-
         for (final InAppNotification n : newNotifications) {
             final int id = n.getId();
-            if (! mNotificationIds.contains(id)) {
+            if (!mNotificationIds.contains(id)) {
                 mNotificationIds.add(id);
                 mUnseenNotifications.add(n);
                 newContent = true;
@@ -83,7 +79,7 @@ import java.util.Set;
                     hasNewVariants = true;
                     break;
                 }
-            } catch(JSONException e) {
+            } catch (JSONException e) {
                 MPLog.e(LOGTAG, "Could not convert variants[" + i + "] into a JSONObject while comparing the new variants", e);
             }
         }
@@ -95,7 +91,7 @@ import java.util.Set;
                 try {
                     JSONObject variant = mVariants.getJSONObject(i);
                     mLoadedVariants.add(variant.getInt("id"));
-                } catch(JSONException e) {
+                } catch (JSONException e) {
                     MPLog.e(LOGTAG, "Could not convert variants[" + i + "] into a JSONObject while updating the map", e);
                 }
             }
@@ -109,7 +105,6 @@ import java.util.Set;
                 newContent = true;
             }
         }
-        mUpdatesFromMixpanel.storeVariants(mVariants);
 
         if (mAutomaticEventsEnabled == null && !automaticEvents) {
             MPDbAdapter.getInstance(mContext).cleanupAutomaticEvents(mToken);
@@ -126,14 +121,14 @@ import java.util.Set;
                     mIntegrations = integrationsSet;
                     newContent = true;
                 }
-            } catch(JSONException e) {
+            } catch (JSONException e) {
                 MPLog.e(LOGTAG, "Got an integration id from " + integrations.toString() + " that wasn't an int", e);
             }
         }
 
         MPLog.v(LOGTAG, "New Decide content has become available. " +
-                    newNotifications.size() + " notifications and " +
-                    variants.length() + " experiments have been added.");
+                newNotifications.size() + " notifications and " +
+                variants.length() + " experiments have been added.");
 
         if (newContent && null != mListener) {
             mListener.onNewResults();
@@ -172,7 +167,9 @@ import java.util.Set;
         return notif;
     }
 
-    public synchronized Set<String> getIntegrations() { return mIntegrations; }
+    public synchronized Set<String> getIntegrations() {
+        return mIntegrations;
+    }
 
     // if a notification was failed to show, add it back to the unseen list so that we
     // won't lose it
@@ -183,7 +180,7 @@ import java.util.Set;
     }
 
     public synchronized boolean hasUpdatesAvailable() {
-        return (! mUnseenNotifications.isEmpty()) || (mVariants != null && mVariants.length() > 0);
+        return (!mUnseenNotifications.isEmpty()) || (mVariants != null && mVariants.length() > 0);
     }
 
     public Boolean isAutomaticEventsEnabled() {
@@ -201,7 +198,6 @@ import java.util.Set;
     private final Set<Integer> mNotificationIds;
     private final List<InAppNotification> mUnseenNotifications;
     private final OnNewResultsListener mListener;
-    private final UpdatesFromMixpanel mUpdatesFromMixpanel;
     private JSONArray mVariants;
     private static final Set<Integer> mLoadedVariants = new HashSet<>();
     private Boolean mAutomaticEventsEnabled;

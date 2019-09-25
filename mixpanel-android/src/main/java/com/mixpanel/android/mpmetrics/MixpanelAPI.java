@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.app.FragmentTransaction;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,12 +15,8 @@ import android.os.Build;
 import android.os.Bundle;
 
 import com.mixpanel.android.R;
-import com.mixpanel.android.takeoverinapp.TakeoverInAppActivity;
 import com.mixpanel.android.util.ActivityImageUtils;
 import com.mixpanel.android.util.MPLog;
-import com.mixpanel.android.viewcrawler.TrackingDebug;
-import com.mixpanel.android.viewcrawler.UpdatesFromMixpanel;
-import com.mixpanel.android.viewcrawler.ViewCrawler;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -259,8 +254,6 @@ public class MixpanelAPI {
         mDeviceInfo = Collections.unmodifiableMap(deviceInfo);
 
         mSessionMetadata = new SessionMetadata();
-        mUpdatesFromMixpanel = constructUpdatesFromMixpanel(context, token);
-        mTrackingDebug = constructTrackingDebug();
         mPersistentIdentity = getPersistentIdentity(context, referrerPreferences, token);
         mEventTimings = mPersistentIdentity.getTimeEvents();
         mMessages = getAnalyticsMessages();
@@ -270,7 +263,7 @@ public class MixpanelAPI {
         }
 
         mUpdatesListener = constructUpdatesListener();
-        mDecideMessages = constructDecideUpdates(token, mUpdatesListener, mUpdatesFromMixpanel);
+        mDecideMessages = constructDecideUpdates(token, mUpdatesListener);
         mConnectIntegrations = new ConnectIntegrations(this, mContext);
 
         // TODO reading persistent identify immediately forces the lazy load of the preferences, and defeats the
@@ -327,8 +320,6 @@ public class MixpanelAPI {
             }
 
         }
-
-        mUpdatesFromMixpanel.startUpdates();
 
         if (!mConfig.getDisableExceptionHandler()) {
             ExceptionHandler.init();
@@ -827,8 +818,6 @@ public class MixpanelAPI {
         mPersistentIdentity.clearPreferences();
         identify(getDistinctId(), false);
         mConnectIntegrations.reset();
-        mUpdatesFromMixpanel.storeVariants(new JSONArray());
-        mUpdatesFromMixpanel.applyPersistedUpdates();
         flush();
     }
 
@@ -1178,23 +1167,6 @@ public class MixpanelAPI {
         public void showNotificationIfAvailable(Activity parent);
 
         /**
-         * Applies A/B test changes, if they are present. By default, your application will attempt
-         * to join available experiments any time an activity is resumed, but you can disable this
-         * automatic behavior by adding the following tag to the &lt;application&gt; tag in your AndroidManifest.xml
-         * {@code
-         * <meta-data android:name="com.mixpanel.android.MPConfig.AutoShowMixpanelUpdates"
-         * android:value="false" />
-         * }
-         * <p>
-         * If you disable AutoShowMixpanelUpdates, you'll need to call joinExperimentIfAvailable to
-         * join or clear existing experiments. If you want to display a loading screen or otherwise
-         * wait for experiments to load from the server before you apply them, you can use
-         * {@link #addOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener)} to
-         * be informed that new experiments are ready.
-         */
-        public void joinExperimentIfAvailable();
-
-        /**
          * Shows the given in-app notification to the user. Display will occur just as if the
          * notification was shown via showNotificationIfAvailable. In most cases, it is
          * easier and more efficient to use showNotificationIfAvailable.
@@ -1272,7 +1244,6 @@ public class MixpanelAPI {
          *
          * <p>The listener will be called when new in-app notifications or experiments
          * are detected as available. That means you wait to call
-         * {@link People#showNotificationIfAvailable(Activity)}, and {@link People#joinExperimentIfAvailable()}
          * to show content and updates that have been delivered to your app. (You can also call these
          * functions whenever else you would like, they're inexpensive and will do nothing if no
          * content is available.)
@@ -1287,26 +1258,6 @@ public class MixpanelAPI {
          * @param listener the listener to add
          */
         public void removeOnMixpanelUpdatesReceivedListener(OnMixpanelUpdatesReceivedListener listener);
-
-        /**
-         * Sets the listener that will receive a callback when new Tweaks from Mixpanel are discovered. Most
-         * users of the library will not need this method, since Tweaks are applied automatically to your
-         * application by default.
-         *
-         * <p>The given listener will be called when a new batch of Tweaks is applied. Handlers
-         * should be prepared to handle the callback on an arbitrary thread.
-         *
-         * <p>The listener will be called when new Tweaks are detected as available. That means the listener
-         * will get called once {@link People#joinExperimentIfAvailable()} has successfully applied the changes.
-         *
-         * @param listener the listener to set
-         */
-        public void addOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener);
-
-        /**
-         * Removes the listener previously registered with addOnMixpanelTweaksUpdatedListener.
-         */
-        public void removeOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener);
 
     }
 
@@ -1379,7 +1330,6 @@ public class MixpanelAPI {
 
     /* package */ void onBackground() {
         flush();
-        mUpdatesFromMixpanel.applyPersistedUpdates();
     }
 
     /* package */ void onForeground() {
@@ -1434,8 +1384,8 @@ public class MixpanelAPI {
         return new PersistentIdentity(referrerPreferences, storedPreferences, timeEventsPrefs, mixpanelPrefs);
     }
 
-    /* package */ DecideMessages constructDecideUpdates(final String token, final DecideMessages.OnNewResultsListener listener, UpdatesFromMixpanel updatesFromMixpanel) {
-        return new DecideMessages(mContext, token, listener, updatesFromMixpanel, mPersistentIdentity.getSeenCampaignIds());
+    /* package */ DecideMessages constructDecideUpdates(final String token, final DecideMessages.OnNewResultsListener listener) {
+        return new DecideMessages(mContext, token, listener, mPersistentIdentity.getSeenCampaignIds());
     }
 
     /* package */ UpdatesListener constructUpdatesListener() {
@@ -1445,26 +1395,6 @@ public class MixpanelAPI {
         } else {
             return new SupportedUpdatesListener();
         }
-    }
-
-    /* package */ UpdatesFromMixpanel constructUpdatesFromMixpanel(final Context context, final String token) {
-        if (Build.VERSION.SDK_INT < MPConfig.UI_FEATURES_MIN_API) {
-            MPLog.i(LOGTAG, "SDK version is lower than " + MPConfig.UI_FEATURES_MIN_API + ". Web Configuration, A/B Testing, and Dynamic Tweaks are disabled.");
-            return new NoOpUpdatesFromMixpanel(sSharedTweaks);
-        } else if (mConfig.getDisableViewCrawler() || Arrays.asList(mConfig.getDisableViewCrawlerForProjects()).contains(token)) {
-            MPLog.i(LOGTAG, "DisableViewCrawler is set to true. Web Configuration, A/B Testing, and Dynamic Tweaks are disabled.");
-            return new NoOpUpdatesFromMixpanel(sSharedTweaks);
-        } else {
-            return new ViewCrawler(mContext, mToken, this, sSharedTweaks);
-        }
-    }
-
-    /* package */ TrackingDebug constructTrackingDebug() {
-        if (mUpdatesFromMixpanel instanceof ViewCrawler) {
-            return (TrackingDebug) mUpdatesFromMixpanel;
-        }
-
-        return null;
     }
 
     /* package */ boolean sendAppOpen() {
@@ -1716,12 +1646,6 @@ public class MixpanelAPI {
         }
 
         @Override
-        public void joinExperimentIfAvailable() {
-            final JSONArray variants = mDecideMessages.getVariants();
-            mUpdatesFromMixpanel.setVariants(variants);
-        }
-
-        @Override
         public void trackCharge(double amount, JSONObject properties) {
             if (hasOptedOutTracking()) return;
             final Date now = new Date();
@@ -1797,20 +1721,6 @@ public class MixpanelAPI {
             mUpdatesListener.removeOnMixpanelUpdatesReceivedListener(listener);
         }
 
-        @Override
-        public void addOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-            if (null == listener) {
-                throw new NullPointerException("Listener cannot be null");
-            }
-
-            mUpdatesFromMixpanel.addOnMixpanelTweaksUpdatedListener(listener);
-        }
-
-        @Override
-        public void removeOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-            mUpdatesFromMixpanel.removeOnMixpanelTweaksUpdatedListener(listener);
-        }
-
         private JSONObject stdPeopleMessage(String actionType, Object properties)
                 throws JSONException {
             final JSONObject dataObj = new JSONObject();
@@ -1860,7 +1770,7 @@ public class MixpanelAPI {
                         }
 
                         final InAppNotification.Type inAppType = toShow.getType();
-                        if (inAppType == InAppNotification.Type.TAKEOVER && !ConfigurationChecker.checkTakeoverInAppActivityAvailable(parent.getApplicationContext())) {
+                        if (inAppType == InAppNotification.Type.TAKEOVER) {
                             MPLog.v(LOGTAG, "Application is not configured to show takeover notifications, none will be shown.");
                             return; // Can't show due to config.
                         }
@@ -1902,16 +1812,6 @@ public class MixpanelAPI {
                                     MPLog.v(LOGTAG, "Unable to show notification.");
                                     mDecideMessages.markNotificationAsUnseen(toShow);
                                 }
-                            }
-                            break;
-                            case TAKEOVER: {
-                                MPLog.v(LOGTAG, "Sending intent for takeover notification.");
-
-                                final Intent intent = new Intent(parent.getApplicationContext(), TakeoverInAppActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                                intent.putExtra(TakeoverInAppActivity.INTENT_ID_KEY, intentId);
-                                parent.startActivity(intent);
                             }
                             break;
                             default:
@@ -1991,54 +1891,6 @@ public class MixpanelAPI {
         private final Executor mExecutor = Executors.newSingleThreadExecutor();
     }
 
-    /* package */ class NoOpUpdatesFromMixpanel implements UpdatesFromMixpanel {
-        public NoOpUpdatesFromMixpanel(Tweaks tweaks) {
-            mTweaks = tweaks;
-        }
-
-        @Override
-        public void startUpdates() {
-            // No op
-        }
-
-        @Override
-        public void storeVariants(JSONArray variants) {
-            // No op
-        }
-
-        @Override
-        public void applyPersistedUpdates() {
-            // No op
-        }
-
-        @Override
-        public void setEventBindings(JSONArray bindings) {
-            // No op
-        }
-
-        @Override
-        public void setVariants(JSONArray variants) {
-            // No op
-        }
-
-        @Override
-        public Tweaks getTweaks() {
-            return mTweaks;
-        }
-
-        @Override
-        public void addOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-            // No op
-        }
-
-        @Override
-        public void removeOnMixpanelTweaksUpdatedListener(OnMixpanelTweaksUpdatedListener listener) {
-            // No op
-        }
-
-        private final Tweaks mTweaks;
-    }
-
     ////////////////////////////////////////////////////
     protected void flushNoDecideCheck() {
         if (hasOptedOutTracking()) return;
@@ -2106,10 +1958,6 @@ public class MixpanelAPI {
                     new AnalyticsMessages.EventDescription(eventName, messageProps,
                             mToken, isAutomaticEvent, mSessionMetadata.getMetadataForEvent());
             mMessages.eventsMessage(eventDescription);
-
-            if (null != mTrackingDebug) {
-                mTrackingDebug.reportTrack(eventName);
-            }
         } catch (final JSONException e) {
             MPLog.e(LOGTAG, "Exception tracking event " + eventName, e);
         }
@@ -2210,10 +2058,8 @@ public class MixpanelAPI {
     private final MPConfig mConfig;
     private final String mToken;
     private final PeopleImpl mPeople;
-    private final UpdatesFromMixpanel mUpdatesFromMixpanel;
     private final PersistentIdentity mPersistentIdentity;
     private final UpdatesListener mUpdatesListener;
-    private final TrackingDebug mTrackingDebug;
     private final ConnectIntegrations mConnectIntegrations;
     private final DecideMessages mDecideMessages;
     private final Map<String, String> mDeviceInfo;
