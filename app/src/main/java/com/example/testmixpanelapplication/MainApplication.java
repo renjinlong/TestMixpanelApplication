@@ -2,7 +2,7 @@ package com.example.testmixpanelapplication;
 
 import android.app.Application;
 
-//import com.mixpanel.android.mpmetrics.MixpanelAPI;
+import com.mixpanel.android.mpmetrics.MixpanelAPI;
 
 public class MainApplication extends Application {
 
@@ -11,9 +11,9 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-//        MixpanelAPI mixpanel =
-//                MixpanelAPI.getInstance(getApplicationContext(), MIXPANEL_TOKEN);
+        MixpanelAPI mixpanel =
+                MixpanelAPI.getDefaultInstance(getApplicationContext());
     }
 
-    
+
 }

@@ -336,6 +336,10 @@ public class MixpanelAPI {
         return getInstance(context, token, false);
     }
 
+    public static MixpanelAPI getDefaultInstance(Context context) {
+        return getInstance(context, "token", false);
+    }
+
     /**
      * Get the instance of MixpanelAPI associated with your Mixpanel project token.
      *

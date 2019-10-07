@@ -18,7 +18,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mixpanel =
-                MixpanelAPI.getInstance(getApplicationContext(), MIXPANEL_TOKEN);
+                MixpanelAPI.getDefaultInstance(getApplicationContext());
         try {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("s", 1);
