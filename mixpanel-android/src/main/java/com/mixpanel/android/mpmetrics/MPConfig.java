@@ -218,7 +218,6 @@ public class MPConfig {
         mSessionTimeoutDuration = metaData.getInt("com.mixpanel.android.MPConfig.SessionTimeoutDuration", Integer.MAX_VALUE); // no timeout by default
         mUseIpAddressForGeolocation = metaData.getBoolean("com.mixpanel.android.MPConfig.UseIpAddressForGeolocation", true);
         mTestMode = metaData.getBoolean("com.mixpanel.android.MPConfig.TestMode", false);
-        mNotificationChannelImportance = metaData.getInt("com.mixpanel.android.MPConfig.NotificationChannelImportance", 3); // NotificationManger.IMPORTANCE_DEFAULT
 
         Object dataExpirationMetaData = metaData.get("com.mixpanel.android.MPConfig.DataExpiration");
         long dataExpirationLong = 1000 * 60 * 60 * 24 * 5; // 5 days default
@@ -236,18 +235,6 @@ public class MPConfig {
             }
         }
         mDataExpiration = dataExpirationLong;
-
-        String notificationChannelId = metaData.getString("com.mixpanel.android.MPConfig.NotificationChannelId");
-        if (notificationChannelId == null) {
-            notificationChannelId = "mp";
-        }
-        mNotificationChannelId = notificationChannelId;
-
-        String notificationChannelName = metaData.getString("com.mixpanel.android.MPConfig.NotificationChannelName");
-        if (notificationChannelName == null) {
-            notificationChannelName = SystemInformation.getInstance(context).getAppName();
-        }
-        mNotificationChannelName = notificationChannelName;
 
         String eventsEndpoint = metaData.getString("com.mixpanel.android.MPConfig.EventsEndpoint");
         if (eventsEndpoint != null) {
@@ -354,18 +341,6 @@ public class MPConfig {
         return mSessionTimeoutDuration;
     }
 
-    public String getNotificationChannelId() {
-        return mNotificationChannelId;
-    }
-
-    public String getNotificationChannelName() {
-        return mNotificationChannelName;
-    }
-
-    public int getNotificationChannelImportance() {
-        return mNotificationChannelImportance;
-    }
-
     public boolean getUseIpAddressForGeolocation() {
         return mUseIpAddressForGeolocation;
     }
@@ -431,10 +406,7 @@ public class MPConfig {
                 "    PeopleEndpoint " + getPeopleEndpoint() + "\n" +
                 "    IgnoreInvisibleViewsEditor " + getIgnoreInvisibleViewsEditor() + "\n" +
                 "    MinimumSessionDuration: " + getMinimumSessionDuration() + "\n" +
-                "    SessionTimeoutDuration: " + getSessionTimeoutDuration() + "\n" +
-                "    NotificationChannelId: " + getNotificationChannelId() + "\n" +
-                "    NotificationChannelName: " + getNotificationChannelName() + "\n" +
-                "    NotificationChannelImportance: " + getNotificationChannelImportance();
+                "    SessionTimeoutDuration: " + getSessionTimeoutDuration();
     }
 
     private final int mBulkUploadLimit;
@@ -454,9 +426,6 @@ public class MPConfig {
     private final int mMinSessionDuration;
     private final int mSessionTimeoutDuration;
     private final boolean mUseIpAddressForGeolocation;
-    private final int mNotificationChannelImportance;
-    private final String mNotificationChannelId;
-    private final String mNotificationChannelName;
 
     // Mutable, with synchronized accessor and mutator
     private SSLSocketFactory mSSLSocketFactory;
