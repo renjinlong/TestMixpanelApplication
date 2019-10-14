@@ -60,26 +60,28 @@ public class MobileCommonManage {
 
             // 返回值MCC + MNC
             String operator = mTelephonyManager.getNetworkOperator();
-            int mcc = Integer.parseInt(operator.substring(0, 3));
-            int mnc = Integer.parseInt(operator.substring(3));
+            int mcc = Integer.parseInt(operator.length() >= 3 ? operator.substring(0, 3) : "0");
+            int mnc = Integer.parseInt(operator.length() >= 4 ? operator.substring(3) : "0");
 
             CellLocation cellLocation = mTelephonyManager.getCellLocation();
 
-            int lac = 0, cellId;
+            int lac = 0, cellId = 0;
             // 中国移动和中国联通获取LAC、CID的方式
             if (cellLocation instanceof GsmCellLocation) {
                 GsmCellLocation location = (GsmCellLocation) cellLocation;
                 lac = location.getLac();
-//                cellId = location.getCid();
+                cellId = location.getCid();
             } else if (cellLocation instanceof CdmaCellLocation) { // 中国电信获取LAC、CID的方式
                 CdmaCellLocation location = (CdmaCellLocation) cellLocation;
                 lac = location.getNetworkId();
-//                cellId = location.getBaseStationId();
+                cellId = location.getBaseStationId();
             }
 
             map.put(BaseData.CommonInfo.CELL_LOC_MCC, mcc);
             map.put(BaseData.CommonInfo.CELL_LOC_MNC, mnc);
             map.put(BaseData.CommonInfo.CELL_LOC_LAC, lac);
+            map.put(BaseData.CommonInfo.CELL_LOC_CELLID, cellId);
+            map.put(BaseData.CommonInfo.CELL_LOC_INFO, lac + ":" + mcc + ":" + mnc + ":" + cellId);
 
             // 获取邻区基站信息
 //        List<NeighboringCellInfo> infos = mTelephonyManager.getNeighboringCellInfo();

@@ -7,7 +7,7 @@ package com.suixingpay.mobilehardware.base;
  * @date 2019/10/07
  */
 public class BaseData {
-    public static final String UNKNOWN_PARAM = "$unknown";
+    public static final String UNKNOWN_PARAM = "unknown";
 
     public static class Aduio {
         /**
@@ -531,7 +531,13 @@ public class BaseData {
     }
 
     public static class CommonInfo {
+
         /**
+         * lac:mcc:mnc:cell-id（基站信息）
+         */
+        public static final String CELL_LOC_INFO = "cellLocInfo";
+        /**
+         * /**
          * MCC，Mobile Country Code，移动国家代码（中国的为460）
          */
         public static final String CELL_LOC_MCC = "cellLocMcc";

@@ -18,10 +18,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.mixpanel.android.util.MPLog;
+import com.mixpanel.android.util.SxfAnalysisUtils;
 
 // In order to use writeEdits, we have to suppress the linter's check for commit()/apply()
 @SuppressLint("CommitPrefEdits")
-/* package */ class PersistentIdentity {
+        /* package */ class PersistentIdentity {
 
     // Should ONLY be called from an OnPrefsLoadedListener (since it should NEVER be called concurrently)
     public static JSONArray waitingPeopleRecordsForSending(SharedPreferences storedPreferences) {
@@ -41,7 +42,7 @@ import com.mixpanel.android.util.MPLog;
             for (int i = 0; i < waitingObjects.length(); i++) {
                 try {
                     final JSONObject ob = waitingObjects.getJSONObject(i);
-                    ob.put("$distinct_id", peopleDistinctId);
+                    ob.put("dId", peopleDistinctId);
                     ret.put(ob);
                 } catch (final JSONException e) {
                     MPLog.e(LOGTAG, "Unparsable object found in waiting people records", e);
@@ -68,7 +69,8 @@ import com.mixpanel.android.util.MPLog;
         }
     }
 
-    public PersistentIdentity(Future<SharedPreferences> referrerPreferences, Future<SharedPreferences> storedPreferences, Future<SharedPreferences> timeEventsPreferences, Future<SharedPreferences> mixpanelPreferences) {
+    public PersistentIdentity(final Context context, Future<SharedPreferences> referrerPreferences, Future<SharedPreferences> storedPreferences, Future<SharedPreferences> timeEventsPreferences, Future<SharedPreferences> mixpanelPreferences) {
+        mContext = context;
         mLoadReferrerPreferences = referrerPreferences;
         mLoadStoredPreferences = storedPreferences;
         mTimeEventsPreferences = timeEventsPreferences;
@@ -85,6 +87,7 @@ import com.mixpanel.android.util.MPLog;
                 }
             }
         };
+
     }
 
     public synchronized void addSuperPropertiesToObject(JSONObject ob) {
@@ -153,38 +156,38 @@ import com.mixpanel.android.util.MPLog;
     }
 
     public synchronized String getAnonymousId() {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         return mAnonymousId;
     }
 
     public synchronized boolean getHadPersistedDistinctId() {
-        if (! mIdentitiesLoaded) {
-           readIdentities();
+        if (!mIdentitiesLoaded) {
+            readIdentities();
         }
         return mHadPersistedDistinctId;
     }
 
     public synchronized String getEventsDistinctId() {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         return mEventsDistinctId;
     }
 
     public synchronized String getEventsUserId() {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
-        if(mEventsUserIdPresent) {
+        if (mEventsUserIdPresent) {
             return mEventsDistinctId;
         }
         return null;
     }
 
     public synchronized void setAnonymousIdIfAbsent(String anonymousId) {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         if (mAnonymousId != null) {
@@ -196,7 +199,7 @@ import com.mixpanel.android.util.MPLog;
     }
 
     public synchronized void setEventsDistinctId(String eventsDistinctId) {
-        if(!mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         mEventsDistinctId = eventsDistinctId;
@@ -204,7 +207,7 @@ import com.mixpanel.android.util.MPLog;
     }
 
     public synchronized void markEventsUserIdPresent() {
-        if(!mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         mEventsUserIdPresent = true;
@@ -212,14 +215,14 @@ import com.mixpanel.android.util.MPLog;
     }
 
     public synchronized String getPeopleDistinctId() {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         return mPeopleDistinctId;
     }
 
     public synchronized void setPeopleDistinctId(String peopleDistinctId) {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         mPeopleDistinctId = peopleDistinctId;
@@ -227,7 +230,7 @@ import com.mixpanel.android.util.MPLog;
     }
 
     public synchronized void storeWaitingPeopleRecord(JSONObject record) {
-        if (! mIdentitiesLoaded) {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         if (null == mWaitingPeopleRecords) {
@@ -238,8 +241,9 @@ import com.mixpanel.android.util.MPLog;
         writeIdentities();
     }
 
-    /* package */ synchronized JSONArray getWaitingPeopleRecords() {
-        if (! mIdentitiesLoaded) {
+    /* package */
+    synchronized JSONArray getWaitingPeopleRecords() {
+        if (!mIdentitiesLoaded) {
             readIdentities();
         }
         return mWaitingPeopleRecords;
@@ -297,7 +301,7 @@ import com.mixpanel.android.util.MPLog;
         for (final Iterator<?> iter = superProperties.keys(); iter.hasNext(); ) {
             final String key = (String) iter.next();
             try {
-               propCache.put(key, superProperties.get(key));
+                propCache.put(key, superProperties.get(key));
             } catch (final JSONException e) {
                 MPLog.e(LOGTAG, "Exception registering super property.", e);
             }
@@ -365,7 +369,7 @@ import com.mixpanel.android.util.MPLog;
 
         for (final Iterator<?> iter = superProperties.keys(); iter.hasNext(); ) {
             final String key = (String) iter.next();
-            if (! propCache.has(key)) {
+            if (!propCache.has(key)) {
                 try {
                     propCache.put(key, superProperties.get(key));
                 } catch (final JSONException e) {
@@ -387,7 +391,7 @@ import com.mixpanel.android.util.MPLog;
         try {
             SharedPreferences prefs = mMixpanelPreferences.get();
             firstLaunch = prefs.getBoolean(token, false);
-        }  catch (final ExecutionException e) {
+        } catch (final ExecutionException e) {
             MPLog.e(LOGTAG, "Couldn't read internal Mixpanel shared preferences.", e.getCause());
         } catch (final InterruptedException e) {
             MPLog.e(LOGTAG, "Couldn't read internal Mixpanel from shared preferences.", e);
@@ -623,7 +627,11 @@ import com.mixpanel.android.util.MPLog;
         }
 
         if (mEventsDistinctId == null) {
-            mAnonymousId = UUID.randomUUID().toString();
+            String mAndroidId = SxfAnalysisUtils.getAndroidID(mContext);
+            if (!SxfAnalysisUtils.isValidAndroidId(mAndroidId)) {
+                mAndroidId = UUID.randomUUID().toString();
+            }
+            mAnonymousId = mAndroidId;
             mEventsDistinctId = mAnonymousId;
             mEventsUserIdPresent = false;
             writeIdentities();
@@ -659,6 +667,7 @@ import com.mixpanel.android.util.MPLog;
             MPLog.e(LOGTAG, "Can't write opt-out shared preferences.", e);
         }
     }
+
     // All access should be synchronized on this
     private void writeIdentities() {
         try {
@@ -687,6 +696,7 @@ import com.mixpanel.android.util.MPLog;
         editor.apply();
     }
 
+    private final Context mContext;
     private final Future<SharedPreferences> mLoadStoredPreferences;
     private final Future<SharedPreferences> mLoadReferrerPreferences;
     private final Future<SharedPreferences> mTimeEventsPreferences;

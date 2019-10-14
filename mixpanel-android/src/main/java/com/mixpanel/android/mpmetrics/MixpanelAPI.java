@@ -8,8 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -228,20 +226,20 @@ public class MixpanelAPI {
         mConfig = config;
 
         final Map<String, String> deviceInfo = new HashMap<String, String>();
-        deviceInfo.put("$android_lib_version", MPConfig.VERSION);
-        deviceInfo.put("$android_os", "Android");
-        deviceInfo.put("$android_os_version", Build.VERSION.RELEASE == null ? "UNKNOWN" : Build.VERSION.RELEASE);
-        deviceInfo.put("$android_manufacturer", Build.MANUFACTURER == null ? "UNKNOWN" : Build.MANUFACTURER);
-        deviceInfo.put("$android_brand", Build.BRAND == null ? "UNKNOWN" : Build.BRAND);
-        deviceInfo.put("$android_model", Build.MODEL == null ? "UNKNOWN" : Build.MODEL);
-        try {
-            final PackageManager manager = mContext.getPackageManager();
-            final PackageInfo info = manager.getPackageInfo(mContext.getPackageName(), 0);
-            deviceInfo.put("$android_app_version", info.versionName);
-            deviceInfo.put("$android_app_version_code", Integer.toString(info.versionCode));
-        } catch (final PackageManager.NameNotFoundException e) {
-            MPLog.e(LOGTAG, "Exception getting app version name", e);
-        }
+//        deviceInfo.put("$android_lib_version", MPConfig.VERSION);
+//        deviceInfo.put("$android_os", "Android");
+//        deviceInfo.put("$android_os_version", Build.VERSION.RELEASE == null ? "UNKNOWN" : Build.VERSION.RELEASE);
+//        deviceInfo.put("$android_manufacturer", Build.MANUFACTURER == null ? "UNKNOWN" : Build.MANUFACTURER);
+//        deviceInfo.put("$android_brand", Build.BRAND == null ? "UNKNOWN" : Build.BRAND);
+//        deviceInfo.put("$android_model", Build.MODEL == null ? "UNKNOWN" : Build.MODEL);
+//        try {
+//            final PackageManager manager = mContext.getPackageManager();
+//            final PackageInfo info = manager.getPackageInfo(mContext.getPackageName(), 0);
+//            deviceInfo.put("$android_app_version", info.versionName);
+//            deviceInfo.put("$android_app_version_code", Integer.toString(info.versionCode));
+//        } catch (final PackageManager.NameNotFoundException e) {
+//            MPLog.e(LOGTAG, "Exception getting app version name", e);
+//        }
         mDeviceInfo = Collections.unmodifiableMap(deviceInfo);
 
         mSessionMetadata = new SessionMetadata();
@@ -257,53 +255,55 @@ public class MixpanelAPI {
 
         // TODO reading persistent identify immediately forces the lazy load of the preferences, and defeats the
         // purpose of PersistentIdentity's laziness.
-        String decideId = mPersistentIdentity.getPeopleDistinctId();
-        if (null == decideId) {
-            decideId = mPersistentIdentity.getEventsDistinctId();
-        }
+//        String decideId = mPersistentIdentity.getPeopleDistinctId();
+//        if (null == decideId) {
+//            decideId = mPersistentIdentity.getEventsDistinctId();
+//        }
 
         if (mPersistentIdentity.isFirstLaunch(MPDbAdapter.getInstance(mContext).getDatabaseFile().exists())) {
-            track(AutomaticEvents.FIRST_OPEN, null, true);
+            //TODO 暂时不去发送第一次启动埋点
+//            track(AutomaticEvents.FIRST_OPEN, null, true);
 
             mPersistentIdentity.setHasLaunched();
         }
 
         registerMixpanelActivityLifecycleCallbacks();
 
+        //关闭打开app的埋点
         if (sendAppOpen()) {
-            track("$app_open", null);
+            track("app_open", null);
         }
 
-        if (!mPersistentIdentity.isFirstIntegration(mToken)) {
-            try {
-                final JSONObject messageProps = new JSONObject();
-                messageProps.put("mp_lib", "Android");
-                messageProps.put("lib", "Android");
-                messageProps.put("distinct_id", token);
-                messageProps.put("$lib_version", MPConfig.VERSION);
-                messageProps.put("$user_id", token);
-                final AnalyticsMessages.EventDescription eventDescription =
-                        new AnalyticsMessages.EventDescription(
-                                "Integration",
-                                messageProps,
-                                "85053bf24bba75239b16a601d9387e17");
-                mMessages.eventsMessage(eventDescription);
-                mMessages.postToServer(new AnalyticsMessages.FlushDescription("85053bf24bba75239b16a601d9387e17", false));
+//        if (!mPersistentIdentity.isFirstIntegration(mToken)) {
+//            try {
+//                final JSONObject messageProps = new JSONObject();
+//                messageProps.put("mp_lib", "Android");
+//                messageProps.put("lib", "Android");
+//                messageProps.put("dId", token);
+//                messageProps.put("sdkVer", MPConfig.VERSION);
+////                messageProps.put("$user_id", token);
+//                final AnalyticsMessages.EventDescription eventDescription =
+//                        new AnalyticsMessages.EventDescription(
+//                                "Integration",
+//                                messageProps,
+//                                "85053bf24bba75239b16a601d9387e17");
+//                mMessages.eventsMessage(eventDescription);
+//                mMessages.postToServer(new AnalyticsMessages.FlushDescription("85053bf24bba75239b16a601d9387e17", false));
+//
+//                mPersistentIdentity.setIsIntegrated(mToken);
+//            } catch (JSONException e) {
+//            }
+//        }
 
-                mPersistentIdentity.setIsIntegrated(mToken);
-            } catch (JSONException e) {
-            }
-        }
-
-        if (mPersistentIdentity.isNewVersion(deviceInfo.get("$android_app_version_code"))) {
-            try {
-                final JSONObject messageProps = new JSONObject();
-                messageProps.put(AutomaticEvents.VERSION_UPDATED, deviceInfo.get("$android_app_version"));
-                track(AutomaticEvents.APP_UPDATED, messageProps, true);
-            } catch (JSONException e) {
-            }
-
-        }
+//        if (mPersistentIdentity.isNewVersion(deviceInfo.get("$android_app_version_code"))) {
+//            try {
+//                final JSONObject messageProps = new JSONObject();
+//                messageProps.put(AutomaticEvents.VERSION_UPDATED, deviceInfo.get("$android_app_version"));
+//                track(AutomaticEvents.APP_UPDATED, messageProps, true);
+//            } catch (JSONException e) {
+//            }
+//
+//        }
     }
 
     /**
@@ -368,7 +368,7 @@ public class MixpanelAPI {
      *                              {@link #optOutTracking()}.
      * @return an instance of MixpanelAPI associated with your project
      */
-    public static MixpanelAPI getInstance(Context context, String token, boolean optOutTrackingDefault) {
+    private static MixpanelAPI getInstance(Context context, String token, boolean optOutTrackingDefault) {
         if (null == token || null == context) {
             return null;
         }
@@ -1253,7 +1253,7 @@ public class MixpanelAPI {
         final String mixpanelPrefsName = "com.mixpanel.android.mpmetrics.Mixpanel";
         final Future<SharedPreferences> mixpanelPrefs = sPrefsLoader.loadPreferences(context, mixpanelPrefsName, null);
 
-        return new PersistentIdentity(referrerPreferences, storedPreferences, timeEventsPrefs, mixpanelPrefs);
+        return new PersistentIdentity(context, referrerPreferences, storedPreferences, timeEventsPrefs, mixpanelPrefs);
     }
 
     /* package */ boolean sendAppOpen() {
@@ -1507,17 +1507,17 @@ public class MixpanelAPI {
             final String distinctId = getDistinctId(); // TODO ensure getDistinctId is thread safe
             final String anonymousId = getAnonymousId();
             dataObj.put(actionType, properties);
-            dataObj.put("$token", mToken);
-            dataObj.put("$time", System.currentTimeMillis());
-            dataObj.put("$had_persisted_distinct_id", mPersistentIdentity.getHadPersistedDistinctId());
-            if (null != anonymousId) {
-                dataObj.put("$device_id", anonymousId);
-            }
-            if (null != distinctId) {
-                dataObj.put("$distinct_id", distinctId);
-                dataObj.put("$user_id", distinctId);
-            }
-            dataObj.put("$mp_metadata", mSessionMetadata.getMetadataForPeople());
+//            dataObj.put("$token", mToken);
+            dataObj.put("t", System.currentTimeMillis());
+//            dataObj.put("$had_persisted_distinct_id", mPersistentIdentity.getHadPersistedDistinctId());
+//            if (null != anonymousId) {
+//                dataObj.put("$device_id", anonymousId);
+//            }
+//            if (null != distinctId) {
+//                dataObj.put("dId", distinctId);
+//                dataObj.put("$user_id", distinctId);
+//            }
+//            dataObj.put("$mp_metadata", mSessionMetadata.getMetadataForPeople());
 
             return dataObj;
         }
@@ -1564,22 +1564,46 @@ public class MixpanelAPI {
             final double timeSecondsDouble = (System.currentTimeMillis()) / 1000.0;
             final long timeSeconds = (long) timeSecondsDouble;
             final String distinctId = getDistinctId();
-            final String anonymousId = getAnonymousId();
-            final String userId = getUserId();
-            messageProps.put("time", timeSeconds);
-            messageProps.put("distinct_id", distinctId);
-            messageProps.put("$had_persisted_distinct_id", mPersistentIdentity.getHadPersistedDistinctId());
-            if (anonymousId != null) {
-                messageProps.put("$device_id", anonymousId);
-            }
-            if (userId != null) {
-                messageProps.put("$user_id", userId);
-            }
+//            final String anonymousId = getAnonymousId();
+//            final String userId = getUserId();
+            messageProps.put("t", System.currentTimeMillis());
+            messageProps.put("dId", distinctId);
+
+            //事件id or 组件ID
+            messageProps.put("eId", "");
+            //页面id
+            messageProps.put("pId", "");
+            //渠道
+            messageProps.put("cType", "");
+            //用户id
+            messageProps.put("uId", "");
+            //登录绑定之后唯一标识
+            messageProps.put("bId", "");
+            //产品线
+            messageProps.put("pLine", "");
+            //网络状态
+            messageProps.put("netType", "");
+            //操作编码
+            messageProps.put("actId", "");
+            //位置信息
+            messageProps.put("gps", "");
+            //私有属性
+            messageProps.put("pAttr", new Object());
+            //各平台数据
+            messageProps.put("dAttr", new Object());
+
+//            messageProps.put("$had_persisted_distinct_id", mPersistentIdentity.getHadPersistedDistinctId());
+//            if (anonymousId != null) {
+//                messageProps.put("$device_id", anonymousId);
+//            }
+//            if (userId != null) {
+//                messageProps.put("$user_id", userId);
+//            }
 
             if (null != eventBegin) {
                 final double eventBeginDouble = ((double) eventBegin) / 1000.0;
                 final double secondsElapsed = timeSecondsDouble - eventBeginDouble;
-                messageProps.put("$duration", secondsElapsed);
+                messageProps.put("duration", secondsElapsed);
             }
 
             if (null != properties) {
@@ -1603,7 +1627,7 @@ public class MixpanelAPI {
 
     private void recordPeopleMessage(JSONObject message) {
         if (hasOptedOutTracking()) return;
-        if (message.has("$distinct_id")) {
+        if (message.has("dId")) {
             mMessages.peopleMessage(new AnalyticsMessages.PeopleDescription(message, mToken));
         } else {
             mPersistentIdentity.storeWaitingPeopleRecord(message);

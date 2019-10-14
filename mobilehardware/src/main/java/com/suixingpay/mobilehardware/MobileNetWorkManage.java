@@ -1,40 +1,24 @@
 package com.suixingpay.mobilehardware;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
-import android.app.usage.StorageStatsManager;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
 import android.os.Build;
-import android.os.Environment;
-import android.os.StatFs;
-import android.os.storage.StorageManager;
-import android.os.storage.StorageVolume;
 import android.provider.Settings;
-import android.support.annotation.RequiresApi;
 import android.telephony.TelephonyManager;
-import android.text.format.Formatter;
-import android.util.Log;
 
 import com.suixingpay.mobilehardware.base.BaseData;
+import com.suixingpay.mobilehardware.utils.MobileHardwareUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Author:   renjinlong
@@ -72,43 +56,80 @@ public class MobileNetWorkManage {
      */
     public String networkTypeALL() {
 
-        ConnectivityManager manager = (ConnectivityManager)
-                ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (manager != null) {
-            NetworkInfo networkInfo = manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-            if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
-                return "WIFI";
-            }
-        }
-
-        TelephonyManager telephonyManager = (TelephonyManager) ctx.getSystemService(Context
-                .TELEPHONY_SERVICE);
-        if (telephonyManager == null) {
-            return "unknown";
-        }
-        int networkType = telephonyManager.getNetworkType();
-        switch (networkType) {
-            case TelephonyManager.NETWORK_TYPE_GPRS:
-            case TelephonyManager.NETWORK_TYPE_EDGE:
-            case TelephonyManager.NETWORK_TYPE_CDMA:
-            case TelephonyManager.NETWORK_TYPE_1xRTT:
-            case TelephonyManager.NETWORK_TYPE_IDEN:
-                return "2G";
-            case TelephonyManager.NETWORK_TYPE_UMTS:
-            case TelephonyManager.NETWORK_TYPE_EVDO_0:
-            case TelephonyManager.NETWORK_TYPE_EVDO_A:
-            case TelephonyManager.NETWORK_TYPE_HSDPA:
-            case TelephonyManager.NETWORK_TYPE_HSUPA:
-            case TelephonyManager.NETWORK_TYPE_HSPA:
-            case TelephonyManager.NETWORK_TYPE_EVDO_B:
-            case TelephonyManager.NETWORK_TYPE_EHRPD:
-            case TelephonyManager.NETWORK_TYPE_HSPAP:
-                return "3G";
-            case TelephonyManager.NETWORK_TYPE_LTE:
-                return "4G";
-            default:
+        try {
+            // 检测权限
+            if (!MobileHardwareUtils.checkHasPermission(ctx, Manifest.permission.ACCESS_NETWORK_STATE)) {
                 return BaseData.UNKNOWN_PARAM;
+            }
 
+            // Wifi
+            ConnectivityManager manager = (ConnectivityManager)
+                    ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (manager != null) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    Network network = manager.getActiveNetwork();
+                    if (network != null) {
+                        NetworkCapabilities capabilities = manager.getNetworkCapabilities(network);
+                        if (capabilities != null) {
+                            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                                return "WIFI";
+                            } else if (!capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+                                    && !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+                                    && !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                                return BaseData.UNKNOWN_PARAM;
+                            }
+                        }
+                    } else {
+                        return BaseData.UNKNOWN_PARAM;
+                    }
+                } else {
+                    NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+                    if (networkInfo == null || !networkInfo.isConnected()) {
+                        return BaseData.UNKNOWN_PARAM;
+                    }
+
+                    networkInfo = manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+                    if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
+                        return "WIFI";
+                    }
+                }
+            }
+
+            // Mobile network
+            TelephonyManager telephonyManager = (TelephonyManager) ctx.getSystemService(Context
+                    .TELEPHONY_SERVICE);
+
+            if (telephonyManager == null) {
+                return BaseData.UNKNOWN_PARAM;
+            }
+
+            int networkType = telephonyManager.getNetworkType();
+            switch (networkType) {
+                case TelephonyManager.NETWORK_TYPE_GPRS:
+                case TelephonyManager.NETWORK_TYPE_EDGE:
+                case TelephonyManager.NETWORK_TYPE_CDMA:
+                case TelephonyManager.NETWORK_TYPE_1xRTT:
+                case TelephonyManager.NETWORK_TYPE_IDEN:
+                    return "2G";
+                case TelephonyManager.NETWORK_TYPE_UMTS:
+                case TelephonyManager.NETWORK_TYPE_EVDO_0:
+                case TelephonyManager.NETWORK_TYPE_EVDO_A:
+                case TelephonyManager.NETWORK_TYPE_HSDPA:
+                case TelephonyManager.NETWORK_TYPE_HSUPA:
+                case TelephonyManager.NETWORK_TYPE_HSPA:
+                case TelephonyManager.NETWORK_TYPE_EVDO_B:
+                case TelephonyManager.NETWORK_TYPE_EHRPD:
+                case TelephonyManager.NETWORK_TYPE_HSPAP:
+                    return "3G";
+                case TelephonyManager.NETWORK_TYPE_LTE:
+                    return "4G";
+                case 20:
+                    return "5G";
+                default:
+                    return BaseData.UNKNOWN_PARAM;
+            }
+        } catch (Exception e) {
+            return BaseData.UNKNOWN_PARAM;
         }
     }
 
@@ -161,6 +182,7 @@ public class MobileNetWorkManage {
 
     /**
      * 是否具有nfc
+     *
      * @param context
      * @return
      */

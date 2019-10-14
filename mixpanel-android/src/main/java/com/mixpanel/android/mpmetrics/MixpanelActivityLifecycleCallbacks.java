@@ -17,7 +17,7 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-/* package */ class MixpanelActivityLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
+        /* package */ class MixpanelActivityLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
     private Handler mHandler = new Handler(Looper.getMainLooper());
     private Runnable check;
     private boolean mIsForeground = true;
@@ -35,11 +35,13 @@ import java.util.Locale;
 
     @Override
     public void onActivityStarted(Activity activity) {
-        trackCampaignOpenedIfNeeded(activity.getIntent());
+        //推送启动app埋点
+//        trackCampaignOpenedIfNeeded(activity.getIntent());
     }
 
     @Override
-    public void onActivityCreated(Activity activity, Bundle savedInstanceState) { }
+    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    }
 
     @Override
     public void onActivityPaused(final Activity activity) {
@@ -49,24 +51,27 @@ import java.util.Locale;
             mHandler.removeCallbacks(check);
         }
 
-        mHandler.postDelayed(check = new Runnable(){
+        mHandler.postDelayed(check = new Runnable() {
             @Override
             public void run() {
                 if (mIsForeground && mPaused) {
                     mIsForeground = false;
-                    try {
-                        double sessionLength = System.currentTimeMillis() - sStartSessionTime;
-                        if (sessionLength >= mConfig.getMinimumSessionDuration() && sessionLength < mConfig.getSessionTimeoutDuration()) {
-                            NumberFormat nf = NumberFormat.getNumberInstance(Locale.ENGLISH);
-                            nf.setMaximumFractionDigits(1);
-                            String sessionLengthString = nf.format((System.currentTimeMillis() - sStartSessionTime) / 1000);
-                            JSONObject sessionProperties = new JSONObject();
-                            sessionProperties.put(AutomaticEvents.SESSION_LENGTH, sessionLengthString);
-                            mMpInstance.track(AutomaticEvents.SESSION, sessionProperties, true);
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+
+                    //TODO 暂时不传送app 使用session
+//                    try {
+//                        double sessionLength = System.currentTimeMillis() - sStartSessionTime;
+//                        if (sessionLength >= mConfig.getMinimumSessionDuration() && sessionLength < mConfig.getSessionTimeoutDuration()) {
+//                            NumberFormat nf = NumberFormat.getNumberInstance(Locale.ENGLISH);
+//                            nf.setMaximumFractionDigits(1);
+//                            String sessionLengthString = nf.format((System.currentTimeMillis() - sStartSessionTime) / 1000);
+//                            JSONObject sessionProperties = new JSONObject();
+//                            sessionProperties.put(AutomaticEvents.SESSION_LENGTH, sessionLengthString);
+//                            mMpInstance.track(AutomaticEvents.SESSION, sessionProperties, true);
+//                        }
+//                    } catch (JSONException e) {
+//                        e.printStackTrace();
+//                    }
+
                     mMpInstance.onBackground();
                 }
             }
@@ -74,10 +79,12 @@ import java.util.Locale;
     }
 
     @Override
-    public void onActivityDestroyed(Activity activity) { }
+    public void onActivityDestroyed(Activity activity) {
+    }
 
     @Override
-    public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
+    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+    }
 
     @Override
     public void onActivityResumed(Activity activity) {
@@ -98,7 +105,8 @@ import java.util.Locale;
     }
 
     @Override
-    public void onActivityStopped(Activity activity) { }
+    public void onActivityStopped(Activity activity) {
+    }
 
     protected boolean isInForeground() {
         return mIsForeground;
@@ -125,8 +133,9 @@ import java.util.Locale;
                     pushProps.put("campaign_id", Integer.valueOf(campaignId).intValue());
                     pushProps.put("message_id", Integer.valueOf(messageId).intValue());
                     pushProps.put("message_type", "push");
-                    mMpInstance.track("$app_open", pushProps);
-                } catch (JSONException e) {}
+                    mMpInstance.track("app_open", pushProps);
+                } catch (JSONException e) {
+                }
 
                 intent.removeExtra("mp_campaign_id");
                 intent.removeExtra("mp_message_id");
