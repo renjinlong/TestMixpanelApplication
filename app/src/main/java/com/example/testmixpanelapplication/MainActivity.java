@@ -15,7 +15,10 @@ import com.suixingpay.mobilehardware.MobileSensorManage;
 import com.suixingpay.mobilehardware.MobileSignalManage;
 import com.sxfanalysis.android.mpmetrics.MPConfig;
 import com.sxfanalysis.android.mpmetrics.MixpanelAPI;
+import com.sxfanalysis.android.mpmetrics.SuperPropertyUpdate;
 import com.sxfanalysis.android.util.MPConstants;
+
+import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,11 +79,28 @@ public class MainActivity extends AppCompatActivity {
 //            map.put("isAgent", wifiProxyInfo.get(BaseData.Signal.PROXY));
 //            map.put("agentIp", wifiProxyInfo.get(BaseData.Signal.PROXY_ADDRESS));
 
+            HashMap<String, String> stringStringHashMap = new HashMap<>();
+            stringStringHashMap.put("phoneName", "ddd");
+
+            map.put("baseAttr", stringStringHashMap);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+
         mixpanel.registerSuperPropertiesMap(map);
+//        mixpanel.updateSuperProperties(new SuperPropertyUpdate() {
+//            @Override
+//            public JSONObject update(JSONObject oldValues) {
+//                try {
+//                    oldValues.put("uId", "12333");
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//                return oldValues;
+//            }
+//        });
 
 //        mixpanel.identify("userid111111111111");
 

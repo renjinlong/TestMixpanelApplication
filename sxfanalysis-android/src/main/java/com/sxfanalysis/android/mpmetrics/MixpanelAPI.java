@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 
+import com.sxfanalysis.android.util.JSONUtils;
 import com.sxfanalysis.android.util.MPLog;
 
 import org.json.JSONArray;
@@ -1504,19 +1505,8 @@ public class MixpanelAPI {
         private JSONObject stdPeopleMessage(String actionType, Object properties)
                 throws JSONException {
             final JSONObject dataObj = new JSONObject();
-            final String distinctId = getDistinctId(); // TODO ensure getDistinctId is thread safe
-            final String anonymousId = getAnonymousId();
             dataObj.put(actionType, properties);
-//            dataObj.put("$token", mToken);
             dataObj.put("t", System.currentTimeMillis());
-//            dataObj.put("$had_persisted_distinct_id", mPersistentIdentity.getHadPersistedDistinctId());
-//            if (null != anonymousId) {
-//                dataObj.put("$device_id", anonymousId);
-//            }
-//            if (null != distinctId) {
-//                dataObj.put("dId", distinctId);
-//                dataObj.put("$user_id", distinctId);
-//            }
 //            dataObj.put("$mp_metadata", mSessionMetadata.getMetadataForPeople());
 
             return dataObj;
@@ -1562,10 +1552,7 @@ public class MixpanelAPI {
             // Don't allow super properties or referral properties to override these fields,
             // but DO allow the caller to override them in their given properties.
             final double timeSecondsDouble = (System.currentTimeMillis()) / 1000.0;
-            final long timeSeconds = (long) timeSecondsDouble;
             final String distinctId = getDistinctId();
-//            final String anonymousId = getAnonymousId();
-//            final String userId = getUserId();
             messageProps.put("t", System.currentTimeMillis());
             messageProps.put("dId", distinctId);
 
@@ -1573,32 +1560,24 @@ public class MixpanelAPI {
             messageProps.put("eId", "");
             //页面id
             messageProps.put("pId", "");
-            //渠道
-            messageProps.put("cType", "");
-            //用户id
-            messageProps.put("uId", "");
-            //登录绑定之后唯一标识
-            messageProps.put("bId", "");
-            //产品线
-            messageProps.put("pLine", "");
+//            //位置信息
+//            messageProps.put("gps", "");
+//            //渠道
+//            messageProps.put("cType", "");
+//            //用户id
+//            messageProps.put("uId", "");
+//            //登录绑定之后唯一标识
+//            messageProps.put("bId", "");
+//            //产品线
+//            messageProps.put("pLine", "");
             //网络状态
             messageProps.put("netType", "");
             //操作编码
             messageProps.put("actId", "");
-            //位置信息
-            messageProps.put("gps", "");
             //私有属性
             messageProps.put("pAttr", new JSONObject());
             //各平台数据
             messageProps.put("dAttr", new JSONObject());
-
-//            messageProps.put("$had_persisted_distinct_id", mPersistentIdentity.getHadPersistedDistinctId());
-//            if (anonymousId != null) {
-//                messageProps.put("$device_id", anonymousId);
-//            }
-//            if (userId != null) {
-//                messageProps.put("$user_id", userId);
-//            }
 
             if (null != eventBegin) {
                 final double eventBeginDouble = ((double) eventBegin) / 1000.0;
@@ -1614,6 +1593,15 @@ public class MixpanelAPI {
                         messageProps.put(key, properties.get(key));
                     }
                 }
+            }
+
+            //dAttr 传入基础属性 baseAttr必须是JsonObject
+            if (messageProps.has("baseAttr")) {
+                JSONObject baseAttr = messageProps.getJSONObject("baseAttr");
+                JSONObject dAttr = messageProps.getJSONObject("dAttr");
+                JSONUtils.combineJson(baseAttr, dAttr);
+                messageProps.put("dAttr", baseAttr);
+                messageProps.remove("baseAttr");
             }
 
             final AnalyticsMessages.EventDescription eventDescription =
