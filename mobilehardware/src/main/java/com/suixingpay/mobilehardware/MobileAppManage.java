@@ -55,11 +55,11 @@ public class MobileAppManage {
             android.content.pm.PackageInfo packageInfo = packageManager.getPackageInfo(ctx.getPackageName(), 0);
             String packageName = packageInfo.packageName;
             map.put(BaseData.App.PACKAGE_NAME, packageName);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                map.put(BaseData.App.APP_VERSION_CODE, packageInfo.getLongVersionCode() + "");
-            } else {
-                map.put(BaseData.App.APP_VERSION_CODE, packageInfo.versionCode + "");
-            }
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//                map.put(BaseData.App.APP_VERSION_CODE, packageInfo.getLongVersionCode() + "");
+//            } else {
+//                map.put(BaseData.App.APP_VERSION_CODE, packageInfo.versionCode + "");
+//            }
             map.put(BaseData.App.APP_VERSION_NAME, packageInfo.versionName);
             map.put(BaseData.App.APP_TARGET_SDK_VERSION, applicationInfo.targetSdkVersion + "");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
