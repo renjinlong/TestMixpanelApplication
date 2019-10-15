@@ -29,13 +29,12 @@ public class MobileDebugInfoManage {
     private static MobileDebugInfoManage _inst;
     private Context ctx;
 
-    public static MobileDebugInfoManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileDebugInfoManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileDebugInfoManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileDebugInfoManage(Context ctx) {

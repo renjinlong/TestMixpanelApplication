@@ -29,13 +29,12 @@ public class MobileSimInfoManage {
     private static MobileSimInfoManage _inst;
     private Context ctx;
 
-    public static MobileSimInfoManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileSimInfoManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileSimInfoManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileSimInfoManage(Context ctx) {

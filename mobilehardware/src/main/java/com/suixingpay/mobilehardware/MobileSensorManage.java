@@ -39,14 +39,14 @@ public class MobileSensorManage {
     private static MobileSensorManage _inst;
     private Context ctx;
 
-    public static MobileSensorManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileSensorManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileSensorManage(ctx);
             return _inst;
         }
+        return _inst;
     }
+
 
     private MobileSensorManage(Context ctx) {
         init(ctx);

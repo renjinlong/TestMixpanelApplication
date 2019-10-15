@@ -35,13 +35,12 @@ public class MobileSignalManage {
     private static MobileSignalManage _inst;
     private Context ctx;
 
-    public static MobileSignalManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileSignalManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileSignalManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileSignalManage(Context ctx) {

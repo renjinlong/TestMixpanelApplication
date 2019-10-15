@@ -19,15 +19,15 @@ public class MobileAduioManage {
     private static final String TAG = MobileAduioManage.class.getSimpleName();
 
     private static MobileAduioManage _inst;
+    private static final Object sInstanceLock = new Object();
     private Context ctx;
 
-    public static MobileAduioManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileAduioManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileAduioManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileAduioManage(Context ctx) {
@@ -37,7 +37,6 @@ public class MobileAduioManage {
     private void init(Context ctx) {
         this.ctx = ctx;
     }
-
 
     /**
      * 获取当前声音相关信息

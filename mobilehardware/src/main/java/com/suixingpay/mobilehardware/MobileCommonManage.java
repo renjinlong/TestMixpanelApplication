@@ -28,13 +28,12 @@ public class MobileCommonManage {
     private static MobileCommonManage _inst;
     private Context ctx;
 
-    public static MobileCommonManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileCommonManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileCommonManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileCommonManage(Context ctx) {

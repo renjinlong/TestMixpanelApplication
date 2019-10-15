@@ -45,13 +45,12 @@ public class MobileMemoryManage {
     private static MobileMemoryManage _inst;
     private Context ctx;
 
-    public static MobileMemoryManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileMemoryManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileMemoryManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileMemoryManage(Context ctx) {

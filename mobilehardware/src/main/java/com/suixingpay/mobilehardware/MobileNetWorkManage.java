@@ -32,13 +32,12 @@ public class MobileNetWorkManage {
     private static MobileNetWorkManage _inst;
     private Context ctx;
 
-    public static MobileNetWorkManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileNetWorkManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileNetWorkManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileNetWorkManage(Context ctx) {

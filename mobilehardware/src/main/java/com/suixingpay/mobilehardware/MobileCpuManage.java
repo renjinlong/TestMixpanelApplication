@@ -29,13 +29,12 @@ public class MobileCpuManage {
     private static MobileCpuManage _inst;
     private Context ctx;
 
-    public static MobileCpuManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileCpuManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileCpuManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileCpuManage(Context ctx) {

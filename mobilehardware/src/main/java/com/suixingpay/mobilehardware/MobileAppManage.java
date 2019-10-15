@@ -26,13 +26,12 @@ public class MobileAppManage {
     private static MobileAppManage _inst;
     private Context ctx;
 
-    public static MobileAppManage getInstance(Context ctx) {
-        if (_inst != null) {
-            return _inst;
-        } else {
+    public static synchronized MobileAppManage getInstance(Context ctx) {
+        if (_inst == null) {
             _inst = new MobileAppManage(ctx);
             return _inst;
         }
+        return _inst;
     }
 
     private MobileAppManage(Context ctx) {
