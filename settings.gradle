@@ -1,2 +1,2 @@
 include ':app'
-include ':mixpanel-android',':mobilehardware'
+include ':sxfanalysis-android',':mobilehardware'

@@ -54,7 +54,7 @@ public class MobileNetWorkManage {
      *
      * @return
      */
-    public String networkTypeALL() {
+    public String getNetType() {
 
         try {
             // 检测权限

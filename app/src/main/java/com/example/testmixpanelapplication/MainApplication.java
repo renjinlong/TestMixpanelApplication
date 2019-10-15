@@ -2,7 +2,7 @@ package com.example.testmixpanelapplication;
 
 import android.app.Application;
 
-import com.mixpanel.android.mpmetrics.MixpanelAPI;
+import com.sxfanalysis.android.mpmetrics.MixpanelAPI;
 
 public class MainApplication extends Application {
 

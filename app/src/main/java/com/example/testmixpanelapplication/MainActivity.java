@@ -2,11 +2,8 @@ package com.example.testmixpanelapplication;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 
-import com.mixpanel.android.mpmetrics.MPConfig;
-import com.mixpanel.android.mpmetrics.MixpanelAPI;
 import com.suixingpay.mobilehardware.MobileAduioManage;
 import com.suixingpay.mobilehardware.MobileBatteryManage;
 import com.suixingpay.mobilehardware.MobileCommonManage;
@@ -16,7 +13,9 @@ import com.suixingpay.mobilehardware.MobileMemoryManage;
 import com.suixingpay.mobilehardware.MobileNetWorkManage;
 import com.suixingpay.mobilehardware.MobileSensorManage;
 import com.suixingpay.mobilehardware.MobileSignalManage;
-import com.suixingpay.mobilehardware.base.BaseData;
+import com.sxfanalysis.android.mpmetrics.MPConfig;
+import com.sxfanalysis.android.mpmetrics.MixpanelAPI;
+import com.sxfanalysis.android.util.MPConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -92,13 +91,12 @@ public class MainActivity extends AppCompatActivity {
 //        mixpanel.getPeople().setMap(peopleMap);
 
         Map<String, Object> track = new HashMap<>();
-        track.put("s", 1);
+        track.put("netType", "WIFI");
 //        track.put("LightValue", sensorManage.LightValue[0]);
 //        track.put("gyroValue0", sensorManage.gyroValue[0]);
 //        track.put("gyroValue1", sensorManage.gyroValue[1]);
 //        track.put("gyroValue2", sensorManage.gyroValue[2]);
         mixpanel.trackMap("test", track);
-
 
         new Handler().postDelayed(new Runnable() {
             @Override

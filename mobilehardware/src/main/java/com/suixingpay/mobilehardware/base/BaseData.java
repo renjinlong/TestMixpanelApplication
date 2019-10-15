@@ -7,7 +7,7 @@ package com.suixingpay.mobilehardware.base;
  * @date 2019/10/07
  */
 public class BaseData {
-    public static final String UNKNOWN_PARAM = "unknown";
+    public static final String UNKNOWN_PARAM = "UNKNOWN";
 
     public static class Aduio {
         /**
